@@ -12,6 +12,7 @@ type Handlers struct {
 	Auth          *handler.AuthHandler
 	User          *handler.UserHandler
 	Role          *handler.RoleHandler
+	Permission    *handler.PermissionHandler
 	Warehouse     *handler.WarehouseHandler
 	Location      *handler.LocationHandler
 	Category      *handler.CategoryHandler
@@ -45,6 +46,7 @@ func Setup(r *gin.Engine, jwtService *jwt.JWT, handlers *Handlers) {
 
 			handler.RegisterUserRoutes(protected, handlers.User)
 			handler.RegisterRoleRoutes(protected, handlers.Role)
+			handler.RegisterPermissionRoutes(protected, handlers.Permission)
 			handler.RegisterWarehouseRoutes(protected, handlers.Warehouse)
 			handler.RegisterLocationRoutes(protected, handlers.Location)
 			handler.RegisterCategoryRoutes(protected, handlers.Category)

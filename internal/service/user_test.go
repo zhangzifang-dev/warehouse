@@ -9,12 +9,13 @@ import (
 )
 
 type mockUserRepositoryForService struct {
-	createFunc      func(ctx context.Context, user *model.User) error
-	getByIDFunc     func(ctx context.Context, id int64) (*model.User, error)
-	listFunc        func(ctx context.Context, page, pageSize int) ([]model.User, int, error)
-	updateFunc      func(ctx context.Context, user *model.User) error
-	deleteFunc      func(ctx context.Context, id int64) error
+	createFunc       func(ctx context.Context, user *model.User) error
+	getByIDFunc      func(ctx context.Context, id int64) (*model.User, error)
+	listFunc         func(ctx context.Context, page, pageSize int) ([]model.User, int, error)
+	updateFunc       func(ctx context.Context, user *model.User) error
+	deleteFunc       func(ctx context.Context, id int64) error
 	getUserRolesFunc func(ctx context.Context, userID int64) ([]model.Role, error)
+	assignRolesFunc  func(ctx context.Context, userID int64, roleIDs []int64) error
 }
 
 func (m *mockUserRepositoryForService) Create(ctx context.Context, user *model.User) error {
@@ -57,6 +58,13 @@ func (m *mockUserRepositoryForService) GetUserRoles(ctx context.Context, userID 
 		return m.getUserRolesFunc(ctx, userID)
 	}
 	return nil, errors.New("not implemented")
+}
+
+func (m *mockUserRepositoryForService) AssignRoles(ctx context.Context, userID int64, roleIDs []int64) error {
+	if m.assignRolesFunc != nil {
+		return m.assignRolesFunc(ctx, userID, roleIDs)
+	}
+	return errors.New("not implemented")
 }
 
 func TestUserService_Create_Success(t *testing.T) {

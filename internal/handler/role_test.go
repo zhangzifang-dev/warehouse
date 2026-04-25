@@ -17,11 +17,13 @@ import (
 )
 
 type mockRoleService struct {
-	listFunc   func(ctx context.Context, page, pageSize int) ([]model.Role, int, error)
-	getByIDFunc func(ctx context.Context, id int64) (*model.Role, error)
-	createFunc func(ctx context.Context, role *model.Role) (*model.Role, error)
-	updateFunc func(ctx context.Context, id int64, role *model.Role) (*model.Role, error)
-	deleteFunc func(ctx context.Context, id int64) error
+	listFunc               func(ctx context.Context, page, pageSize int) ([]model.Role, int, error)
+	getByIDFunc            func(ctx context.Context, id int64) (*model.Role, error)
+	createFunc             func(ctx context.Context, role *model.Role) (*model.Role, error)
+	updateFunc             func(ctx context.Context, id int64, role *model.Role) (*model.Role, error)
+	deleteFunc             func(ctx context.Context, id int64) error
+	getRolePermissionsFunc func(ctx context.Context, roleID int64) ([]model.Permission, error)
+	assignPermissionsFunc  func(ctx context.Context, roleID int64, permissionIDs []int64) error
 }
 
 func (m *mockRoleService) List(ctx context.Context, page, pageSize int) ([]model.Role, int, error) {
@@ -55,6 +57,20 @@ func (m *mockRoleService) Update(ctx context.Context, id int64, role *model.Role
 func (m *mockRoleService) Delete(ctx context.Context, id int64) error {
 	if m.deleteFunc != nil {
 		return m.deleteFunc(ctx, id)
+	}
+	return errors.New("not implemented")
+}
+
+func (m *mockRoleService) GetRolePermissions(ctx context.Context, roleID int64) ([]model.Permission, error) {
+	if m.getRolePermissionsFunc != nil {
+		return m.getRolePermissionsFunc(ctx, roleID)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (m *mockRoleService) AssignPermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
+	if m.assignPermissionsFunc != nil {
+		return m.assignPermissionsFunc(ctx, roleID, permissionIDs)
 	}
 	return errors.New("not implemented")
 }

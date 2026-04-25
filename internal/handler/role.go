@@ -37,6 +37,8 @@ type RoleService interface {
 	Create(ctx context.Context, role *model.Role) (*model.Role, error)
 	Update(ctx context.Context, id int64, role *model.Role) (*model.Role, error)
 	Delete(ctx context.Context, id int64) error
+	GetRolePermissions(ctx context.Context, roleID int64) ([]model.Permission, error)
+	AssignPermissions(ctx context.Context, roleID int64, permissionIDs []int64) error
 }
 
 type RoleHandler struct {
@@ -153,6 +155,48 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 	response.Success(c, nil)
 }
 
+func (h *RoleHandler) GetPermissions(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.Error(c, apperrors.CodeBadRequest, "invalid role id")
+		return
+	}
+
+	permissions, err := h.roleService.GetRolePermissions(c.Request.Context(), id)
+	if err != nil {
+		handleRoleError(c, err)
+		return
+	}
+
+	response.Success(c, permissions)
+}
+
+type AssignPermissionsRequest struct {
+	PermissionIDs []int64 `json:"permission_ids" binding:"required"`
+}
+
+func (h *RoleHandler) AssignPermissions(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.Error(c, apperrors.CodeBadRequest, "invalid role id")
+		return
+	}
+
+	var req AssignPermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, apperrors.CodeBadRequest, "invalid request body")
+		return
+	}
+
+	err = h.roleService.AssignPermissions(c.Request.Context(), id, req.PermissionIDs)
+	if err != nil {
+		handleRoleError(c, err)
+		return
+	}
+
+	response.Success(c, nil)
+}
+
 func handleRoleError(c *gin.Context, err error) {
 	if appErr, ok := apperrors.GetAppError(err); ok {
 		response.Error(c, appErr.Code, appErr.Message)
@@ -169,5 +213,7 @@ func RegisterRoleRoutes(r *gin.RouterGroup, h *RoleHandler) {
 		roles.GET("/:id", h.GetByID)
 		roles.PUT("/:id", h.Update)
 		roles.DELETE("/:id", h.Delete)
+		roles.GET("/:id/permissions", h.GetPermissions)
+		roles.POST("/:id/permissions", h.AssignPermissions)
 	}
 }

@@ -15,6 +15,7 @@ type UserFullRepository interface {
 	Update(ctx context.Context, user *model.User) error
 	Delete(ctx context.Context, id int64) error
 	GetUserRoles(ctx context.Context, userID int64) ([]model.Role, error)
+	AssignRoles(ctx context.Context, userID int64, roleIDs []int64) error
 }
 
 type UserService struct {
@@ -161,6 +162,20 @@ func (s *UserService) GetUserRoles(ctx context.Context, userID int64) ([]model.R
 	}
 
 	return roles, nil
+}
+
+func (s *UserService) AssignRoles(ctx context.Context, userID int64, roleIDs []int64) error {
+	_, err := s.userRepo.GetByID(ctx, userID)
+	if err != nil {
+		return apperrors.NewAppError(apperrors.CodeUserNotFound, "user not found")
+	}
+
+	err = s.userRepo.AssignRoles(ctx, userID, roleIDs)
+	if err != nil {
+		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to assign roles")
+	}
+
+	return nil
 }
 
 func isDuplicateEntry(err error) bool {

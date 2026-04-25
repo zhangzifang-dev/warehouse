@@ -42,6 +42,7 @@ type UserService interface {
 	Update(ctx context.Context, id int64, input *service.UpdateUserInput) (*model.User, error)
 	Delete(ctx context.Context, id int64) error
 	GetUserRoles(ctx context.Context, userID int64) ([]model.Role, error)
+	AssignRoles(ctx context.Context, userID int64, roleIDs []int64) error
 }
 
 type UserHandler struct {
@@ -177,6 +178,32 @@ func (h *UserHandler) GetRoles(c *gin.Context) {
 	response.Success(c, roles)
 }
 
+type AssignRolesRequest struct {
+	RoleIDs []int64 `json:"role_ids" binding:"required"`
+}
+
+func (h *UserHandler) AssignRoles(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.Error(c, apperrors.CodeBadRequest, "invalid user id")
+		return
+	}
+
+	var req AssignRolesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, apperrors.CodeBadRequest, "invalid request body")
+		return
+	}
+
+	err = h.userService.AssignRoles(c.Request.Context(), id, req.RoleIDs)
+	if err != nil {
+		handleUserError(c, err)
+		return
+	}
+
+	response.Success(c, nil)
+}
+
 func handleUserError(c *gin.Context, err error) {
 	if appErr, ok := apperrors.GetAppError(err); ok {
 		response.Error(c, appErr.Code, appErr.Message)
@@ -194,5 +221,6 @@ func RegisterUserRoutes(r *gin.RouterGroup, h *UserHandler) {
 		users.PUT("/:id", h.Update)
 		users.DELETE("/:id", h.Delete)
 		users.GET("/:id/roles", h.GetRoles)
+		users.POST("/:id/roles", h.AssignRoles)
 	}
 }

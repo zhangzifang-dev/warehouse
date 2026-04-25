@@ -28,6 +28,7 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 	roleRepo := repository.NewRoleRepository(db)
+	permissionRepo := repository.NewPermissionRepository(db)
 	warehouseRepo := repository.NewWarehouseRepository(db)
 	locationRepo := repository.NewLocationRepository(db)
 	categoryRepo := repository.NewCategoryRepository(db)
@@ -50,6 +51,7 @@ func main() {
 	authService := service.NewAuthService(userRepo, jwtService)
 	userService := service.NewUserService(userRepo)
 	roleService := service.NewRoleService(roleRepo)
+	permissionService := service.NewPermissionService(permissionRepo)
 	warehouseService := service.NewWarehouseService(warehouseRepo)
 	locationService := service.NewLocationService(locationRepo, warehouseRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
@@ -65,6 +67,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
 	roleHandler := handler.NewRoleHandler(roleService)
+	permissionHandler := handler.NewPermissionHandler(permissionService)
 	warehouseHandler := handler.NewWarehouseHandler(warehouseService)
 	locationHandler := handler.NewLocationHandler(locationService)
 	categoryHandler := handler.NewCategoryHandler(categoryService)
@@ -84,6 +87,7 @@ func main() {
 		Auth:          authHandler,
 		User:          userHandler,
 		Role:          roleHandler,
+		Permission:    permissionHandler,
 		Warehouse:     warehouseHandler,
 		Location:      locationHandler,
 		Category:      categoryHandler,

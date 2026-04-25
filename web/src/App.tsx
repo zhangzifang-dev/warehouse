@@ -10,6 +10,10 @@ import { CategoryList, ProductList } from './pages/product'
 import { InventoryList } from './pages/inventory'
 import { SupplierList, CustomerList } from './pages/partner'
 import { InboundOrderList, OutboundOrderList, StockTransferList } from './pages/order'
+import { UserList } from './pages/system/UserList'
+import { RoleList } from './pages/system/RoleList'
+import { PermissionList } from './pages/system/PermissionList'
+import { AuditLogList } from './pages/system/AuditLogList'
 
 function Dashboard() {
   return <div>Dashboard</div>
@@ -39,8 +43,9 @@ function App() {
           >
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="users" element={<div>用户管理</div>} />
-            <Route path="roles" element={<div>角色管理</div>} />
+            <Route path="users" element={<UserList />} />
+            <Route path="roles" element={<RoleList />} />
+            <Route path="permissions" element={<PermissionList />} />
             <Route path="warehouses" element={<WarehouseList />} />
             <Route path="locations" element={<LocationList />} />
             <Route path="categories" element={<CategoryList />} />
@@ -51,7 +56,7 @@ function App() {
             <Route path="inbound" element={<InboundOrderList />} />
             <Route path="outbound" element={<OutboundOrderList />} />
             <Route path="transfers" element={<StockTransferList />} />
-            <Route path="audit-logs" element={<div>审计日志</div>} />
+            <Route path="audit-logs" element={<AuditLogList />} />
           </Route>
         </Routes>
       </BrowserRouter>

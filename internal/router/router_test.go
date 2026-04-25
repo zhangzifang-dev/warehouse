@@ -296,6 +296,10 @@ func (m *mockUserService) GetUserRoles(ctx context.Context, userID int64) ([]mod
 	return nil, nil
 }
 
+func (m *mockUserService) AssignRoles(ctx context.Context, userID int64, roleIDs []int64) error {
+	return nil
+}
+
 type mockRoleService struct{}
 
 func (m *mockRoleService) List(ctx context.Context, page, pageSize int) ([]model.Role, int, error) {
@@ -315,6 +319,14 @@ func (m *mockRoleService) Update(ctx context.Context, id int64, role *model.Role
 }
 
 func (m *mockRoleService) Delete(ctx context.Context, id int64) error {
+	return nil
+}
+
+func (m *mockRoleService) GetRolePermissions(ctx context.Context, roleID int64) ([]model.Permission, error) {
+	return nil, nil
+}
+
+func (m *mockRoleService) AssignPermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {
 	return nil
 }
 

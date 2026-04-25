@@ -21,6 +21,7 @@ type mockUserService struct {
 	updateFunc       func(ctx context.Context, id int64, input *service.UpdateUserInput) (*model.User, error)
 	deleteFunc       func(ctx context.Context, id int64) error
 	getUserRolesFunc func(ctx context.Context, userID int64) ([]model.Role, error)
+	assignRolesFunc  func(ctx context.Context, userID int64, roleIDs []int64) error
 }
 
 func (m *mockUserService) Create(ctx context.Context, input *service.CreateUserInput) (*model.User, error) {
@@ -63,6 +64,13 @@ func (m *mockUserService) GetUserRoles(ctx context.Context, userID int64) ([]mod
 		return m.getUserRolesFunc(ctx, userID)
 	}
 	return nil, errors.New("not implemented")
+}
+
+func (m *mockUserService) AssignRoles(ctx context.Context, userID int64, roleIDs []int64) error {
+	if m.assignRolesFunc != nil {
+		return m.assignRolesFunc(ctx, userID, roleIDs)
+	}
+	return errors.New("not implemented")
 }
 
 func TestUserHandler_Create_Success(t *testing.T) {
