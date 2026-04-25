@@ -1,0 +1,22 @@
+server:
+  port: 8080
+  mode: debug
+
+database:
+  driver: mysql
+  host: localhost
+  port: 3306
+  name: warehouse
+  user: root
+  password: ""
+  max_open_conns: 100
+  max_idle_conns: 10
+
+jwt:
+  secret: your-secret-key-change-in-production
+  expire: 24h
+
+log:
+  level: debug
+  output: stdout
+  file: ""
