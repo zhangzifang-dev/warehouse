@@ -5,6 +5,11 @@ import { MainLayout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Login } from './pages/auth/Login'
 import { ChangePassword } from './pages/auth/ChangePassword'
+import { WarehouseList, LocationList } from './pages/warehouse'
+import { CategoryList, ProductList } from './pages/product'
+import { InventoryList } from './pages/inventory'
+import { SupplierList, CustomerList } from './pages/partner'
+import { InboundOrderList, OutboundOrderList, StockTransferList } from './pages/order'
 
 function Dashboard() {
   return <div>Dashboard</div>
@@ -36,13 +41,16 @@ function App() {
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="users" element={<div>用户管理</div>} />
             <Route path="roles" element={<div>角色管理</div>} />
-            <Route path="warehouses" element={<div>仓库管理</div>} />
-            <Route path="products" element={<div>商品管理</div>} />
-            <Route path="suppliers" element={<div>供应商管理</div>} />
-            <Route path="customers" element={<div>客户管理</div>} />
-            <Route path="inbound" element={<div>入库管理</div>} />
-            <Route path="outbound" element={<div>出库管理</div>} />
-            <Route path="transfers" element={<div>库存调拨</div>} />
+            <Route path="warehouses" element={<WarehouseList />} />
+            <Route path="locations" element={<LocationList />} />
+            <Route path="categories" element={<CategoryList />} />
+            <Route path="products" element={<ProductList />} />
+            <Route path="inventory" element={<InventoryList />} />
+            <Route path="suppliers" element={<SupplierList />} />
+            <Route path="customers" element={<CustomerList />} />
+            <Route path="inbound" element={<InboundOrderList />} />
+            <Route path="outbound" element={<OutboundOrderList />} />
+            <Route path="transfers" element={<StockTransferList />} />
             <Route path="audit-logs" element={<div>审计日志</div>} />
           </Route>
         </Routes>
