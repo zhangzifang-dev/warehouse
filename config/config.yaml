@@ -4,16 +4,16 @@ server:
 
 database:
   driver: mysql
-  host: localhost
+  host: 192.168.1.13
   port: 3306
   name: warehouse
-  user: root
-  password: ""
+  user: stkuser
+  password: "zzf#432418"
   max_open_conns: 100
   max_idle_conns: 10
 
 jwt:
-  secret: your-secret-key-change-in-production
+  secret: warehouse-management-secret-key-2024
   expire: 24h
 
 log:
