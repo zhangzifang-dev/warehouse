@@ -150,6 +150,14 @@ func (s *InventoryService) Update(ctx context.Context, id int64, input *UpdateIn
 	return inventory, nil
 }
 
+func (s *InventoryService) GetByWarehouseAndProduct(ctx context.Context, warehouseID, productID int64, batchNo string) (*model.Inventory, error) {
+	inventory, err := s.inventoryRepo.GetByWarehouseAndProduct(ctx, warehouseID, productID, batchNo)
+	if err != nil {
+		return nil, err
+	}
+	return inventory, nil
+}
+
 func (s *InventoryService) Delete(ctx context.Context, id int64) error {
 	_, err := s.inventoryRepo.GetByID(ctx, id)
 	if err != nil {

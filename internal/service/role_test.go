@@ -92,13 +92,13 @@ func TestRoleService_Create_Success(t *testing.T) {
 		Status:      1,
 	}
 
-	err := svc.Create(context.Background(), role)
+	created, err := svc.Create(context.Background(), role)
 
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
 	}
-	if role.ID != 1 {
-		t.Errorf("expected role ID 1, got %d", role.ID)
+	if created.ID != 1 {
+		t.Errorf("expected role ID 1, got %d", created.ID)
 	}
 }
 
@@ -116,7 +116,7 @@ func TestRoleService_Create_DuplicateCode(t *testing.T) {
 		Code: "admin",
 	}
 
-	err := svc.Create(context.Background(), role)
+	_, err := svc.Create(context.Background(), role)
 
 	if err == nil {
 		t.Error("expected error for duplicate code, got nil")
@@ -237,6 +237,15 @@ func TestRoleService_List_Success(t *testing.T) {
 
 func TestRoleService_Update_Success(t *testing.T) {
 	mockRepo := &mockRoleRepository{
+		getByIDFunc: func(ctx context.Context, id int64) (*model.Role, error) {
+			return &model.Role{
+				BaseModel:   model.BaseModel{ID: id},
+				Name:        "Admin",
+				Code:        "admin",
+				Description: "Administrator role",
+				Status:      1,
+			}, nil
+		},
 		updateFunc: func(ctx context.Context, role *model.Role) error {
 			return nil
 		},
@@ -245,34 +254,34 @@ func TestRoleService_Update_Success(t *testing.T) {
 	svc := NewRoleService(mockRepo)
 
 	role := &model.Role{
-		BaseModel:   model.BaseModel{ID: 1},
 		Name:        "Admin Updated",
-		Code:        "admin",
 		Description: "Updated description",
 	}
 
-	err := svc.Update(context.Background(), role)
+	updated, err := svc.Update(context.Background(), 1, role)
 
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
+	}
+	if updated.Name != "Admin Updated" {
+		t.Errorf("expected name 'Admin Updated', got '%s'", updated.Name)
 	}
 }
 
 func TestRoleService_Update_NotFound(t *testing.T) {
 	mockRepo := &mockRoleRepository{
-		updateFunc: func(ctx context.Context, role *model.Role) error {
-			return errors.New("record not found")
+		getByIDFunc: func(ctx context.Context, id int64) (*model.Role, error) {
+			return nil, errors.New("record not found")
 		},
 	}
 
 	svc := NewRoleService(mockRepo)
 
 	role := &model.Role{
-		BaseModel: model.BaseModel{ID: 999},
-		Name:      "Admin",
+		Name: "Admin",
 	}
 
-	err := svc.Update(context.Background(), role)
+	_, err := svc.Update(context.Background(), 999, role)
 
 	if err == nil {
 		t.Error("expected error for non-existent role, got nil")

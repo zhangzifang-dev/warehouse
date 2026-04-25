@@ -27,8 +27,12 @@ func NewRoleService(roleRepo RoleRepository) *RoleService {
 	}
 }
 
-func (s *RoleService) Create(ctx context.Context, role *model.Role) error {
-	return s.roleRepo.Create(ctx, role)
+func (s *RoleService) Create(ctx context.Context, role *model.Role) (*model.Role, error) {
+	err := s.roleRepo.Create(ctx, role)
+	if err != nil {
+		return nil, err
+	}
+	return role, nil
 }
 
 func (s *RoleService) GetByID(ctx context.Context, id int64) (*model.Role, error) {
@@ -43,8 +47,25 @@ func (s *RoleService) List(ctx context.Context, page, pageSize int) ([]model.Rol
 	return s.roleRepo.List(ctx, page, pageSize)
 }
 
-func (s *RoleService) Update(ctx context.Context, role *model.Role) error {
-	return s.roleRepo.Update(ctx, role)
+func (s *RoleService) Update(ctx context.Context, id int64, role *model.Role) (*model.Role, error) {
+	existing, err := s.roleRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if role.Name != "" {
+		existing.Name = role.Name
+	}
+	if role.Description != "" {
+		existing.Description = role.Description
+	}
+	if role.Status != 0 {
+		existing.Status = role.Status
+	}
+	err = s.roleRepo.Update(ctx, existing)
+	if err != nil {
+		return nil, err
+	}
+	return existing, nil
 }
 
 func (s *RoleService) Delete(ctx context.Context, id int64) error {
