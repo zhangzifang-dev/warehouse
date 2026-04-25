@@ -29,3 +29,17 @@ func TestOutboundItem_TableName(t *testing.T) {
 		t.Errorf("expected table name 'outbound_items', got '%s'", item.TableName())
 	}
 }
+
+func TestStockTransfer_TableName(t *testing.T) {
+	transfer := &StockTransfer{}
+	if transfer.TableName() != "stock_transfers" {
+		t.Errorf("expected table name 'stock_transfers', got '%s'", transfer.TableName())
+	}
+}
+
+func TestStockTransferItem_TableName(t *testing.T) {
+	item := &StockTransferItem{}
+	if item.TableName() != "stock_transfer_items" {
+		t.Errorf("expected table name 'stock_transfer_items', got '%s'", item.TableName())
+	}
+}

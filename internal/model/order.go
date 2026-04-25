@@ -53,3 +53,30 @@ type OutboundItem struct {
 func (i *OutboundItem) TableName() string {
 	return "outbound_items"
 }
+
+type StockTransfer struct {
+	BaseModel
+	OrderNo         string  `bun:"order_no,notnull,unique" json:"order_no"`
+	FromWarehouseID int64   `bun:"from_warehouse_id,notnull" json:"from_warehouse_id"`
+	ToWarehouseID   int64   `bun:"to_warehouse_id,notnull" json:"to_warehouse_id"`
+	TotalQuantity   float64 `bun:"total_quantity,notnull" json:"total_quantity"`
+	Status          int     `bun:"status,notnull" json:"status"`
+	Remark          string  `bun:"remark" json:"remark"`
+}
+
+func (s *StockTransfer) TableName() string {
+	return "stock_transfers"
+}
+
+type StockTransferItem struct {
+	BaseModel
+	TransferID int64   `bun:"transfer_id,notnull" json:"transfer_id"`
+	ProductID  int64   `bun:"product_id,notnull" json:"product_id"`
+	LocationID int64   `bun:"location_id" json:"location_id"`
+	Quantity   float64 `bun:"quantity,notnull" json:"quantity"`
+	BatchNo    string  `bun:"batch_no" json:"batch_no"`
+}
+
+func (i *StockTransferItem) TableName() string {
+	return "stock_transfer_items"
+}
