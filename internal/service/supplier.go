@@ -1,0 +1,173 @@
+package service
+
+import (
+	"context"
+
+	"warehouse/internal/model"
+	apperrors "warehouse/internal/pkg/errors"
+)
+
+type SupplierRepository interface {
+	Create(ctx context.Context, supplier *model.Supplier) error
+	GetByID(ctx context.Context, id int64) (*model.Supplier, error)
+	GetByCode(ctx context.Context, code string) (*model.Supplier, error)
+	List(ctx context.Context, page, pageSize int, keyword string) ([]model.Supplier, int, error)
+	Update(ctx context.Context, supplier *model.Supplier) error
+	Delete(ctx context.Context, id int64) error
+}
+
+type SupplierService struct {
+	supplierRepo SupplierRepository
+}
+
+func NewSupplierService(supplierRepo SupplierRepository) *SupplierService {
+	return &SupplierService{
+		supplierRepo: supplierRepo,
+	}
+}
+
+type CreateSupplierInput struct {
+	Name    string
+	Code    string
+	Contact string
+	Phone   string
+	Email   string
+	Address string
+	Status  int
+}
+
+type UpdateSupplierInput struct {
+	Name    *string
+	Code    *string
+	Contact *string
+	Phone   *string
+	Email   *string
+	Address *string
+	Status  *int
+}
+
+type ListSuppliersResult struct {
+	Suppliers []model.Supplier
+	Total     int
+}
+
+func (s *SupplierService) Create(ctx context.Context, input *CreateSupplierInput) (*model.Supplier, error) {
+	if input.Name == "" {
+		return nil, apperrors.NewAppError(apperrors.CodeBadRequest, "supplier name is required")
+	}
+
+	if input.Code != "" {
+		existing, err := s.supplierRepo.GetByCode(ctx, input.Code)
+		if err == nil && existing != nil {
+			return nil, apperrors.NewAppError(apperrors.CodeDuplicateEntry, "supplier code already exists")
+		}
+	}
+
+	supplier := &model.Supplier{
+		Name:    input.Name,
+		Code:    input.Code,
+		Contact: input.Contact,
+		Phone:   input.Phone,
+		Email:   input.Email,
+		Address: input.Address,
+		Status:  input.Status,
+	}
+
+	if supplier.Status == 0 {
+		supplier.Status = model.SupplierStatusActive
+	}
+
+	err := s.supplierRepo.Create(ctx, supplier)
+	if err != nil {
+		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create supplier")
+	}
+
+	return supplier, nil
+}
+
+func (s *SupplierService) GetByID(ctx context.Context, id int64) (*model.Supplier, error) {
+	supplier, err := s.supplierRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "supplier not found")
+	}
+	return supplier, nil
+}
+
+func (s *SupplierService) List(ctx context.Context, page, pageSize int, keyword string) (*ListSuppliersResult, error) {
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 10
+	}
+	if pageSize > 100 {
+		pageSize = 100
+	}
+
+	suppliers, total, err := s.supplierRepo.List(ctx, page, pageSize, keyword)
+	if err != nil {
+		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list suppliers")
+	}
+
+	return &ListSuppliersResult{
+		Suppliers: suppliers,
+		Total:     total,
+	}, nil
+}
+
+func (s *SupplierService) Update(ctx context.Context, id int64, input *UpdateSupplierInput) (*model.Supplier, error) {
+	supplier, err := s.supplierRepo.GetByID(ctx, id)
+	if err != nil {
+		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "supplier not found")
+	}
+
+	if input.Code != nil && *input.Code != supplier.Code {
+		if *input.Code != "" {
+			existing, err := s.supplierRepo.GetByCode(ctx, *input.Code)
+			if err == nil && existing != nil {
+				return nil, apperrors.NewAppError(apperrors.CodeDuplicateEntry, "supplier code already exists")
+			}
+		}
+		supplier.Code = *input.Code
+	}
+
+	if input.Name != nil {
+		supplier.Name = *input.Name
+	}
+	if input.Contact != nil {
+		supplier.Contact = *input.Contact
+	}
+	if input.Phone != nil {
+		supplier.Phone = *input.Phone
+	}
+	if input.Email != nil {
+		supplier.Email = *input.Email
+	}
+	if input.Address != nil {
+		supplier.Address = *input.Address
+	}
+	if input.Status != nil {
+		supplier.Status = *input.Status
+	}
+
+	err = s.supplierRepo.Update(ctx, supplier)
+	if err != nil {
+		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update supplier")
+	}
+
+	return supplier, nil
+}
+
+func (s *SupplierService) Delete(ctx context.Context, id int64) error {
+	_, err := s.supplierRepo.GetByID(ctx, id)
+	if err != nil {
+		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "supplier not found")
+	}
+
+	err = s.supplierRepo.Delete(ctx, id)
+	if err != nil {
+		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete supplier")
+	}
+
+	return nil
+}
