@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"embed"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -27,6 +28,9 @@ func newTestRouter() *gin.Engine {
 	return gin.New()
 }
 
+//go:embed testdata
+var testFS embed.FS
+
 func TestSetup_PublicRoutes(t *testing.T) {
 	r := newTestRouter()
 	jwtSvc := newTestJWTService()
@@ -35,7 +39,7 @@ func TestSetup_PublicRoutes(t *testing.T) {
 		Auth: handler.NewAuthHandler(&mockAuthService{}),
 	}
 
-	Setup(r, jwtSvc, handlers)
+	Setup(r, jwtSvc, handlers, testFS)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
 	w := httptest.NewRecorder()
@@ -58,7 +62,7 @@ func TestSetup_ProtectedRoutes_RequireAuth(t *testing.T) {
 		Warehouse: handler.NewWarehouseHandler(&mockWarehouseService{}),
 	}
 
-	Setup(r, jwtSvc, handlers)
+	Setup(r, jwtSvc, handlers, testFS)
 
 	tests := []struct {
 		name   string
@@ -103,7 +107,7 @@ func TestSetup_ProtectedRoutes_WithValidToken(t *testing.T) {
 		Customer:  handler.NewCustomerHandler(&mockCustomerService{}),
 	}
 
-	Setup(r, jwtSvc, handlers)
+	Setup(r, jwtSvc, handlers, testFS)
 
 	token, _ := jwtSvc.GenerateToken(1, "testuser")
 
@@ -160,7 +164,7 @@ func TestSetup_AllRoutesRegistered(t *testing.T) {
 		AuditLog:      handler.NewAuditLogHandler(&mockAuditLogService{}),
 	}
 
-	Setup(r, jwtSvc, handlers)
+	Setup(r, jwtSvc, handlers, testFS)
 
 	routes := r.Routes()
 

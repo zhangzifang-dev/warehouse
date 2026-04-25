@@ -1,4 +1,9 @@
-.PHONY: build run test clean dev
+.PHONY: all build run test clean dev frontend-build
+
+all: frontend-build build
+
+frontend-build:
+	cd web && npm install && npm run build
 
 build:
 	go build -o bin/server ./cmd/server

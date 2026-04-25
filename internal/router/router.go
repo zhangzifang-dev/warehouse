@@ -1,6 +1,11 @@
 package router
 
 import (
+	"embed"
+	"io/fs"
+	"net/http"
+	"strings"
+
 	"warehouse/internal/handler"
 	"warehouse/internal/middleware"
 	"warehouse/internal/pkg/jwt"
@@ -26,7 +31,7 @@ type Handlers struct {
 	AuditLog      *handler.AuditLogHandler
 }
 
-func Setup(r *gin.Engine, jwtService *jwt.JWT, handlers *Handlers) {
+func Setup(r *gin.Engine, jwtService *jwt.JWT, handlers *Handlers, staticFS embed.FS) {
 	r.Use(middleware.CORS())
 	r.Use(middleware.Recovery())
 	r.Use(middleware.Logger())
@@ -60,4 +65,44 @@ func Setup(r *gin.Engine, jwtService *jwt.JWT, handlers *Handlers) {
 			handler.RegisterAuditLogRoutes(protected, handlers.AuditLog)
 		}
 	}
+
+	setupStaticFiles(r, staticFS)
+}
+
+func setupStaticFiles(r *gin.Engine, staticFS embed.FS) {
+	distFS, err := fs.Sub(staticFS, "web/dist")
+	if err != nil {
+		return
+	}
+
+	r.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/api/") {
+			c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+			return
+		}
+
+		if path == "/" {
+			data, err := fs.ReadFile(distFS, "index.html")
+			if err != nil {
+				c.Status(http.StatusNotFound)
+				return
+			}
+			c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+			return
+		}
+
+		filePath := strings.TrimPrefix(path, "/")
+		if _, err := fs.Stat(distFS, filePath); err == nil {
+			c.FileFromFS(filePath, http.FS(distFS))
+			return
+		}
+
+		data, err := fs.ReadFile(distFS, "index.html")
+		if err != nil {
+			c.Status(http.StatusNotFound)
+			return
+		}
+		c.Data(http.StatusOK, "text/html; charset=utf-8", data)
+	})
 }
