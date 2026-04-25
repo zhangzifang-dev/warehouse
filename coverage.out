@@ -1,0 +1,8 @@
+mode: set
+warehouse/internal/pkg/errors/errors.go:27.54,32.2 1 1
+warehouse/internal/pkg/errors/errors.go:34.35,36.2 1 1
+warehouse/internal/pkg/errors/errors.go:38.33,41.2 2 1
+warehouse/internal/pkg/errors/errors.go:43.47,45.29 2 1
+warehouse/internal/pkg/errors/errors.go:45.29,47.3 1 1
+warehouse/internal/pkg/errors/errors.go:48.2,48.19 1 1
+warehouse/internal/pkg/errors/errors.go:51.54,53.2 1 0
