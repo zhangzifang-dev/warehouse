@@ -17,9 +17,6 @@ func TestUserFields(t *testing.T) {
 		},
 		Username: "testuser",
 		Password: "hashedpassword",
-		Nickname: "Test User",
-		Email:    "test@example.com",
-		Phone:    "1234567890",
 		Status:   1,
 	}
 
@@ -31,15 +28,6 @@ func TestUserFields(t *testing.T) {
 	}
 	if user.Password != "hashedpassword" {
 		t.Errorf("Password = %s, want hashedpassword", user.Password)
-	}
-	if user.Nickname != "Test User" {
-		t.Errorf("Nickname = %s, want Test User", user.Nickname)
-	}
-	if user.Email != "test@example.com" {
-		t.Errorf("Email = %s, want test@example.com", user.Email)
-	}
-	if user.Phone != "1234567890" {
-		t.Errorf("Phone = %s, want 1234567890", user.Phone)
 	}
 	if user.Status != 1 {
 		t.Errorf("Status = %d, want 1", user.Status)
@@ -57,15 +45,6 @@ func TestUserZeroValues(t *testing.T) {
 	}
 	if user.Password != "" {
 		t.Errorf("Password = %s, want empty", user.Password)
-	}
-	if user.Nickname != "" {
-		t.Errorf("Nickname = %s, want empty", user.Nickname)
-	}
-	if user.Email != "" {
-		t.Errorf("Email = %s, want empty", user.Email)
-	}
-	if user.Phone != "" {
-		t.Errorf("Phone = %s, want empty", user.Phone)
 	}
 	if user.Status != 0 {
 		t.Errorf("Status = %d, want 0", user.Status)
