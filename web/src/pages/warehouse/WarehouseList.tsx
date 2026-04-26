@@ -76,16 +76,16 @@ export function WarehouseList() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
-    { title: '仓库编码', dataIndex: 'code', width: 120 },
-    { title: '仓库名称', dataIndex: 'name' },
+    { title: 'ID', dataIndex: 'id', width: 60 },
+    { title: '仓库编码', dataIndex: 'code', width: 100 },
+    { title: '仓库名称', dataIndex: 'name', ellipsis: true },
     { title: '地址', dataIndex: 'address', ellipsis: true },
-    { title: '联系人', dataIndex: 'contact', width: 100 },
-    { title: '联系电话', dataIndex: 'phone', width: 130 },
+    { title: '联系人', dataIndex: 'contact', width: 80 },
+    { title: '联系电话', dataIndex: 'phone', width: 100 },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 100,
+      width: 80,
       render: (status: number) => (
         <Tag color={status === 1 ? 'green' : 'red'}>
           {status === 1 ? '启用' : '禁用'}
@@ -94,14 +94,14 @@ export function WarehouseList() {
     },
     {
       title: '操作',
-      width: 150,
+      width: 140,
       render: (_: unknown, record: Warehouse) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
             编辑
           </Button>
           <Popconfirm title="确定删除?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除
             </Button>
           </Popconfirm>
@@ -134,6 +134,7 @@ export function WarehouseList() {
             setPageSize(ps)
           }
         }}
+        scroll={{ x: 'max-content' }}
       />
       <Modal
         title={editingId ? '编辑仓库' : '新增仓库'}
@@ -141,24 +142,27 @@ export function WarehouseList() {
         onOk={handleSubmit}
         onCancel={handleCloseModal}
         confirmLoading={createMutation.isPending || updateMutation.isPending}
+        width={500}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="name" label="仓库名称" rules={[{ required: true, message: '请输入仓库名称' }]}>
+        <Form form={form} layout="vertical" style={{ marginTop: -8 }}>
+          <Form.Item name="name" label="仓库名称" rules={[{ required: true, message: '请输入仓库名称' }]} style={{ marginBottom: 12 }}>
             <Input />
           </Form.Item>
-          <Form.Item name="code" label="仓库编码" rules={[{ required: true, message: '请输入仓库编码' }]}>
+          <Form.Item name="code" label="仓库编码" rules={[{ required: true, message: '请输入仓库编码' }]} style={{ marginBottom: 12 }}>
             <Input disabled={!!editingId} />
           </Form.Item>
-          <Form.Item name="address" label="地址">
+          <Form.Item name="address" label="地址" style={{ marginBottom: 12 }}>
             <Input />
           </Form.Item>
-          <Form.Item name="contact" label="联系人">
-            <Input />
-          </Form.Item>
-          <Form.Item name="phone" label="联系电话">
-            <Input />
-          </Form.Item>
-          <Form.Item name="status" label="状态" initialValue={1}>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <Form.Item name="contact" label="联系人" style={{ marginBottom: 12, flex: 1 }}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="phone" label="联系电话" style={{ marginBottom: 12, flex: 1 }}>
+              <Input />
+            </Form.Item>
+          </div>
+          <Form.Item name="status" label="状态" initialValue={1} style={{ marginBottom: 0 }}>
             <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
           </Form.Item>
         </Form>

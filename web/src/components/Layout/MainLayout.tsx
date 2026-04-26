@@ -95,15 +95,14 @@ export function MainLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed} collapsedWidth={60} width={150}>
+      <Sider trigger={null} collapsible collapsed={collapsed} collapsedWidth={60} width={150} theme="light" style={{ borderRight: '1px solid #f0f0f0' }}>
         <div style={{
           height: 40,
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'flex-start',
           padding: collapsed ? 0 : '0 0 0 16px',
-          borderBottom: '1px solid rgba(255,255,255,0.15)',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%)',
+          borderBottom: '1px solid #f0f0f0',
           flexShrink: 0,
         }}>
           {collapsed ? (
@@ -113,7 +112,7 @@ export function MainLayout() {
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <InboxOutlined style={{ fontSize: 18, color: '#1890ff' }} />
-              <span style={{ fontSize: 15, fontWeight: 600, color: '#fff', letterSpacing: 0.5 }}>WMS</span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: '#333', letterSpacing: 0.5 }}>WMS</span>
             </div>
           )}
         </div>
@@ -123,7 +122,7 @@ export function MainLayout() {
           overflowX: 'hidden',
         }}>
           <Menu
-            theme="dark"
+            theme="light"
             mode="inline"
             selectedKeys={[location.pathname]}
             items={menuItems}
@@ -135,15 +134,15 @@ export function MainLayout() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'flex-start',
-          padding: collapsed ? 0 : '0 16px',
-          borderTop: '1px solid rgba(255,255,255,0.15)',
+          padding: collapsed ? 0 : '0 0 0 16px',
+          borderTop: '1px solid #f0f0f0',
           flexShrink: 0,
         }}>
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: '14px', color: '#fff' }}
+            style={{ fontSize: '14px', color: '#666' }}
           />
         </div>
       </Sider>
