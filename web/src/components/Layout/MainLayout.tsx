@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Layout, Menu, Dropdown, Avatar, Button, theme, Tooltip } from 'antd'
+import { Layout, Menu, Dropdown, Avatar, Button, theme, Tooltip, Space } from 'antd'
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -20,9 +20,12 @@ import {
   LockOutlined,
   LogoutOutlined,
   InboxOutlined,
+  MoonOutlined,
+  SunOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
+import { useTheme } from '../../hooks/useTheme'
 
 const { Header, Sider, Content } = Layout
 
@@ -68,6 +71,7 @@ export function MainLayout() {
   const location = useLocation()
   const { user, logout } = useAuthStore()
   const { token: { colorBgContainer } } = theme.useToken()
+  const { theme: currentTheme, toggleTheme } = useTheme()
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key)
@@ -159,12 +163,21 @@ export function MainLayout() {
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
         }}>
           <span style={{ fontSize: 14, fontWeight: 500 }}>{pageTitle[location.pathname] || '未知页面'}</span>
-          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Avatar icon={<UserOutlined />} size="small" />
-              <span style={{ fontSize: 12 }}>{user?.username}</span>
-            </div>
-          </Dropdown>
+          <Space size={8}>
+            <Tooltip title={currentTheme === 'light' ? '切换到深色模式' : '切换到浅色模式'}>
+              <Button
+                type="text"
+                icon={currentTheme === 'light' ? <MoonOutlined /> : <SunOutlined />}
+                onClick={toggleTheme}
+              />
+            </Tooltip>
+            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+              <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Avatar icon={<UserOutlined />} size="small" />
+                <span style={{ fontSize: 12 }}>{user?.username}</span>
+              </div>
+            </Dropdown>
+          </Space>
         </Header>
         <Content style={{
           padding: 8,
