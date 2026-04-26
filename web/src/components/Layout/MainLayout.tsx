@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Layout, Menu, Dropdown, Avatar, Button, theme, Tooltip, Space } from 'antd'
+import { Layout, Menu, Dropdown, Avatar, Button, theme, Tooltip } from 'antd'
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -84,6 +84,12 @@ export function MainLayout() {
 
   const userMenuItems = [
     {
+      key: 'theme',
+      icon: currentTheme === 'light' ? <MoonOutlined /> : <SunOutlined />,
+      label: currentTheme === 'light' ? '深色模式' : '浅色模式',
+      onClick: toggleTheme,
+    },
+    {
       key: 'change-password',
       icon: <LockOutlined />,
       label: '修改密码',
@@ -163,21 +169,12 @@ export function MainLayout() {
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
         }}>
           <span style={{ fontSize: 14, fontWeight: 500, color: colorText }}>{pageTitle[location.pathname] || '未知页面'}</span>
-          <Space size={8}>
-            <Tooltip title={currentTheme === 'light' ? '切换到深色模式' : '切换到浅色模式'}>
-              <Button
-                type="text"
-                icon={currentTheme === 'light' ? <MoonOutlined /> : <SunOutlined />}
-                onClick={toggleTheme}
-              />
-            </Tooltip>
-            <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-              <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Avatar icon={<UserOutlined />} size="small" />
-                <span style={{ fontSize: 12, color: colorText }}>{user?.username}</span>
-              </div>
-            </Dropdown>
-          </Space>
+          <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
+            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Avatar icon={<UserOutlined />} size="small" />
+              <span style={{ fontSize: 12, color: colorText }}>{user?.username}</span>
+            </div>
+          </Dropdown>
         </Header>
         <Content style={{
           padding: 8,
