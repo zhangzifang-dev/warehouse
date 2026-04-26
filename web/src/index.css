@@ -63,10 +63,19 @@ body {
 
 .ant-menu-item {
   font-size: 13px !important;
-  padding: 0 16px !important;
+  padding: 0 0 0 24px !important;
   margin: 2px 0 !important;
   height: 36px !important;
   line-height: 36px !important;
+}
+
+.ant-layout-sider-collapsed .ant-menu-item {
+  padding: 0 !important;
+  text-align: center !important;
+}
+
+.ant-layout-sider-collapsed .ant-menu-item .ant-menu-item-icon {
+  margin-right: 0 !important;
 }
 
 .ant-menu-submenu-title {
@@ -130,11 +139,49 @@ body {
   height: 100% !important;
 }
 
+.ant-layout-sider-collapsed .ant-layout-sider-children > div:first-child {
+  justify-content: center !important;
+  padding: 0 !important;
+}
+
+.ant-layout-sider-collapsed .ant-menu-item {
+  padding: 0 !important;
+  text-align: center !important;
+}
+
+.ant-layout-sider-collapsed .ant-menu-item .ant-menu-item-icon {
+  margin-right: 0 !important;
+  font-size: 14px !important;
+}
+
 .sider-menu-scroll {
   flex: 1;
-  overflow-y: auto;
+  overflow-y: overlay;
   overflow-x: hidden;
   max-height: calc(100vh - 32px);
+}
+
+@supports not (overflow-y: overlay) {
+  .sider-menu-scroll {
+    overflow-y: auto;
+  }
+}
+
+.sider-menu-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sider-menu-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sider-menu-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.sider-menu-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .sider-menu-scroll::-webkit-scrollbar {

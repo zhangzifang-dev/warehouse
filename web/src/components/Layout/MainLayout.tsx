@@ -1,19 +1,25 @@
 import { useState } from 'react'
-import { Layout, Menu, Dropdown, Avatar, Button, theme } from 'antd'
+import { Layout, Menu, Dropdown, Avatar, Button, theme, Tooltip } from 'antd'
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   DashboardOutlined,
   UserOutlined,
-  TeamOutlined,
+  SafetyOutlined,
   HomeOutlined,
+  EnvironmentOutlined,
   AppstoreOutlined,
-  ShoppingCartOutlined,
-  ContainerOutlined,
+  TagsOutlined,
+  ShopOutlined,
+  IdcardOutlined,
+  DatabaseOutlined,
+  LoginOutlined,
+  ExportOutlined,
   SwapOutlined,
-  FileSearchOutlined,
+  AuditOutlined,
   LockOutlined,
   LogoutOutlined,
+  InboxOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
@@ -23,18 +29,18 @@ const { Header, Sider, Content } = Layout
 const menuItems = [
   { key: '/dashboard', icon: <DashboardOutlined />, label: '仪表盘' },
   { key: '/users', icon: <UserOutlined />, label: '用户管理' },
-  { key: '/roles', icon: <TeamOutlined />, label: '角色管理' },
+  { key: '/roles', icon: <SafetyOutlined />, label: '角色管理' },
   { key: '/warehouses', icon: <HomeOutlined />, label: '仓库管理' },
-  { key: '/locations', icon: <AppstoreOutlined />, label: '库位管理' },
+  { key: '/locations', icon: <EnvironmentOutlined />, label: '库位管理' },
   { key: '/products', icon: <AppstoreOutlined />, label: '商品管理' },
-  { key: '/categories', icon: <AppstoreOutlined />, label: '分类管理' },
-  { key: '/suppliers', icon: <UserOutlined />, label: '供应商管理' },
-  { key: '/customers', icon: <TeamOutlined />, label: '客户管理' },
-  { key: '/inventory', icon: <AppstoreOutlined />, label: '库存管理' },
-  { key: '/inbound', icon: <ShoppingCartOutlined />, label: '入库管理' },
-  { key: '/outbound', icon: <ContainerOutlined />, label: '出库管理' },
+  { key: '/categories', icon: <TagsOutlined />, label: '分类管理' },
+  { key: '/suppliers', icon: <ShopOutlined />, label: '供应商管理' },
+  { key: '/customers', icon: <IdcardOutlined />, label: '客户管理' },
+  { key: '/inventory', icon: <DatabaseOutlined />, label: '库存管理' },
+  { key: '/inbound', icon: <LoginOutlined />, label: '入库管理' },
+  { key: '/outbound', icon: <ExportOutlined />, label: '出库管理' },
   { key: '/transfers', icon: <SwapOutlined />, label: '库存调拨' },
-  { key: '/audit-logs', icon: <FileSearchOutlined />, label: '审计日志' },
+  { key: '/audit-logs', icon: <AuditOutlined />, label: '审计日志' },
 ]
 
 const pageTitle: Record<string, string> = {
@@ -89,23 +95,27 @@ export function MainLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed}>
+      <Sider trigger={null} collapsible collapsed={collapsed} collapsedWidth={60}>
         <div style={{
-          height: 32,
+          height: 40,
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'flex-start',
-          padding: collapsed ? 0 : '0 16px',
+          padding: collapsed ? 0 : '0 0 0 24px',
           borderBottom: '1px solid rgba(255,255,255,0.15)',
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%)',
           flexShrink: 0,
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)',
         }}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: '14px', color: '#fff' }}
-          />
+          {collapsed ? (
+            <Tooltip title="WMS" placement="right">
+              <InboxOutlined style={{ fontSize: 18, color: '#1890ff', cursor: 'pointer' }} />
+            </Tooltip>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <InboxOutlined style={{ fontSize: 18, color: '#1890ff' }} />
+              <span style={{ fontSize: 15, fontWeight: 600, color: '#fff', letterSpacing: 0.5 }}>WMS</span>
+            </div>
+          )}
         </div>
         <div className="sider-menu-scroll" style={{
           flex: 1,
@@ -118,6 +128,22 @@ export function MainLayout() {
             selectedKeys={[location.pathname]}
             items={menuItems}
             onClick={handleMenuClick}
+          />
+        </div>
+        <div style={{
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          padding: collapsed ? 0 : '0 16px',
+          borderTop: '1px solid rgba(255,255,255,0.15)',
+          flexShrink: 0,
+        }}>
+          <Button
+            type="text"
+            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            onClick={() => setCollapsed(!collapsed)}
+            style={{ fontSize: '14px', color: '#fff' }}
           />
         </div>
       </Sider>
