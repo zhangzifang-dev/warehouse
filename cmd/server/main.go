@@ -5,7 +5,6 @@ import (
 	"log"
 	"time"
 
-	embedfs "warehouse"
 	"warehouse/internal/config"
 	"warehouse/internal/handler"
 	"warehouse/internal/pkg/jwt"
@@ -100,7 +99,7 @@ func main() {
 		OutboundOrder: outboundOrderHandler,
 		StockTransfer: stockTransferHandler,
 		AuditLog:      auditLogHandler,
-	}, embedfs.Static)
+	})
 
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
 	log.Printf("Server starting on %s", addr)
