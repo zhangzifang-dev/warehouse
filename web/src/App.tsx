@@ -29,6 +29,10 @@ function App() {
       locale={zhCN}
       theme={{
         algorithm: appTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+        token: appTheme === 'dark' ? {
+          colorBorder: '#303030',
+          colorBorderSecondary: '#262626',
+        } : {},
       }}
     >
       <BrowserRouter>
