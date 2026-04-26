@@ -32,7 +32,10 @@ function App() {
         token: appTheme === 'dark' ? {
           colorBorder: '#1f1f1f',
           colorBorderSecondary: '#1a1a1a',
-        } : {},
+        } : {
+          colorBorder: '#f0f0f0',
+          colorBorderSecondary: '#f5f5f5',
+        },
       }}
     >
       <BrowserRouter>
