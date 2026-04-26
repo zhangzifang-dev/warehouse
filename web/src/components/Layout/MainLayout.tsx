@@ -95,13 +95,13 @@ export function MainLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed} collapsedWidth={60}>
+      <Sider trigger={null} collapsible collapsed={collapsed} collapsedWidth={60} width={150}>
         <div style={{
           height: 40,
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'flex-start',
-          padding: collapsed ? 0 : '0 0 0 24px',
+          padding: collapsed ? 0 : '0 0 0 16px',
           borderBottom: '1px solid rgba(255,255,255,0.15)',
           background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%)',
           flexShrink: 0,

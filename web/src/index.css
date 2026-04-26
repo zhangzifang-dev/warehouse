@@ -17,40 +17,54 @@ body {
 }
 
 .ant-table {
-  font-size: 12px !important;
+  font-size: 13px !important;
 }
 
 .ant-table-thead > tr > th {
   padding: 8px 8px !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
 }
 
 .ant-table-tbody > tr > td {
   padding: 8px 8px !important;
-  font-size: 12px !important;
+  font-size: 13px !important;
+}
+
+.ant-btn {
+  font-size: 13px !important;
 }
 
 .ant-btn-sm {
-  font-size: 12px !important;
+  font-size: 13px !important;
   padding: 0 7px !important;
 }
 
 .ant-input,
+.ant-input-affix-wrapper,
 .ant-select-selector,
-.ant-input-number {
-  font-size: 12px !important;
+.ant-input-number,
+.ant-picker,
+.ant-mentions,
+textarea {
+  font-size: 13px !important;
+  font-family: inherit !important;
+}
+
+.ant-select-selection-item,
+.ant-select-selection-placeholder {
+  font-size: 13px !important;
 }
 
 .ant-form-item-label > label {
-  font-size: 12px !important;
+  font-size: 13px !important;
 }
 
 .ant-modal-body {
-  font-size: 12px !important;
+  font-size: 13px !important;
 }
 
 .ant-pagination {
-  font-size: 12px !important;
+  font-size: 13px !important;
 }
 
 .ant-pagination-item,
@@ -63,7 +77,7 @@ body {
 
 .ant-menu-item {
   font-size: 13px !important;
-  padding: 0 0 0 24px !important;
+  padding: 0 0 0 16px !important;
   margin: 2px 0 !important;
   height: 36px !important;
   line-height: 36px !important;
@@ -110,22 +124,43 @@ body {
 }
 
 .ant-descriptions-item-label {
-  font-size: 12px !important;
+  font-size: 13px !important;
 }
 
 .ant-descriptions-item-content {
-  font-size: 12px !important;
+  font-size: 13px !important;
 }
 
 .ant-tag {
-  font-size: 11px !important;
+  font-size: 12px !important;
   padding: 0 4px !important;
   line-height: 18px !important;
 }
 
 .ant-dropdown-menu-item {
-  font-size: 12px !important;
+  font-size: 13px !important;
   padding: 4px 12px !important;
+}
+
+.ant-radio-wrapper,
+.ant-checkbox-wrapper {
+  font-size: 13px !important;
+}
+
+.ant-tabs-tab {
+  font-size: 13px !important;
+}
+
+.ant-tree {
+  font-size: 13px !important;
+}
+
+.ant-transfer {
+  font-size: 13px !important;
+}
+
+.ant-transfer-list-content-item {
+  font-size: 13px !important;
 }
 
 .ant-layout-sider {
