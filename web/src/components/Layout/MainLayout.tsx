@@ -20,9 +20,12 @@ import {
   LockOutlined,
   LogoutOutlined,
   InboxOutlined,
+  MoonOutlined,
+  SunOutlined,
 } from '@ant-design/icons'
 import { useNavigate, useLocation, Outlet } from 'react-router-dom'
 import { useAuthStore } from '../../stores/authStore'
+import { useTheme } from '../../hooks/useTheme'
 
 const { Header, Sider, Content } = Layout
 
@@ -67,7 +70,8 @@ export function MainLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  const { token: { colorBgContainer } } = theme.useToken()
+  const { token: { colorBgContainer, colorBorder, colorText, colorTextSecondary } } = theme.useToken()
+  const { theme: currentTheme, toggleTheme } = useTheme()
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key)
@@ -79,6 +83,12 @@ export function MainLayout() {
   }
 
   const userMenuItems = [
+    {
+      key: 'theme',
+      icon: currentTheme === 'light' ? <MoonOutlined /> : <SunOutlined />,
+      label: currentTheme === 'light' ? '深色模式' : '浅色模式',
+      onClick: toggleTheme,
+    },
     {
       key: 'change-password',
       icon: <LockOutlined />,
@@ -95,14 +105,14 @@ export function MainLayout() {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed} collapsedWidth={60} width={150} theme="light" style={{ borderRight: '1px solid #f0f0f0' }}>
+      <Sider trigger={null} collapsible collapsed={collapsed} collapsedWidth={60} width={150} theme="light" style={{ borderRight: `1px solid ${colorBorder}` }}>
         <div style={{
           height: 40,
           display: 'flex',
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'flex-start',
           padding: collapsed ? 0 : '0 0 0 16px',
-          borderBottom: '1px solid #f0f0f0',
+          borderBottom: `1px solid ${colorBorder}`,
           flexShrink: 0,
         }}>
           {collapsed ? (
@@ -112,7 +122,7 @@ export function MainLayout() {
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <InboxOutlined style={{ fontSize: 18, color: '#1890ff' }} />
-              <span style={{ fontSize: 15, fontWeight: 600, color: '#333', letterSpacing: 0.5 }}>WMS</span>
+              <span style={{ fontSize: 15, fontWeight: 600, color: colorText, letterSpacing: 0.5 }}>WMS</span>
             </div>
           )}
         </div>
@@ -135,14 +145,14 @@ export function MainLayout() {
           alignItems: 'center',
           justifyContent: collapsed ? 'center' : 'flex-start',
           padding: collapsed ? 0 : '0 0 0 16px',
-          borderTop: '1px solid #f0f0f0',
+          borderTop: `1px solid ${colorBorder}`,
           flexShrink: 0,
         }}>
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: '14px', color: '#666' }}
+            style={{ fontSize: '14px', color: colorTextSecondary }}
           />
         </div>
       </Sider>
@@ -151,18 +161,18 @@ export function MainLayout() {
           height: 32,
           lineHeight: '32px',
           padding: '0 16px',
-          background: 'linear-gradient(90deg, #f8fafc 0%, #fff 50%, #f8fafc 100%)',
+          background: colorBgContainer,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          borderBottom: '1px solid #e8e8e8',
+          borderBottom: `1px solid ${colorBorder}`,
           boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
         }}>
-          <span style={{ fontSize: 14, fontWeight: 500 }}>{pageTitle[location.pathname] || '未知页面'}</span>
+          <span style={{ fontSize: 14, fontWeight: 500, color: colorText }}>{pageTitle[location.pathname] || '未知页面'}</span>
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
               <Avatar icon={<UserOutlined />} size="small" />
-              <span style={{ fontSize: 12 }}>{user?.username}</span>
+              <span style={{ fontSize: 12, color: colorText }}>{user?.username}</span>
             </div>
           </Dropdown>
         </Header>

@@ -47,6 +47,7 @@ func Setup(r *gin.Engine, jwtService *jwt.JWT, handlers *Handlers) {
 		{
 			protected.GET("/auth/profile", handlers.Auth.GetProfile)
 			protected.PUT("/auth/password", handlers.Auth.ChangePassword)
+			protected.PUT("/auth/theme", handlers.Auth.UpdateTheme)
 
 			handler.RegisterUserRoutes(protected, handlers.User)
 			handler.RegisterRoleRoutes(protected, handlers.Role)

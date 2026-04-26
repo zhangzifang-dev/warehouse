@@ -70,6 +70,16 @@ func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 	return err
 }
 
+func (r *UserRepository) UpdateTheme(ctx context.Context, userID int64, theme string) error {
+	_, err := r.db.NewUpdate().
+		Model((*model.User)(nil)).
+		Set("theme = ?", theme).
+		Where("id = ?", userID).
+		Where("deleted_at IS NULL").
+		Exec(ctx)
+	return err
+}
+
 func (r *UserRepository) Delete(ctx context.Context, id int64) error {
 	_, err := r.db.NewUpdate().
 		Model((*model.User)(nil)).

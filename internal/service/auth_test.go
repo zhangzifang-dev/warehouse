@@ -37,6 +37,10 @@ func (m *mockUserRepository) Update(ctx context.Context, user *model.User) error
 	return errors.New("not implemented")
 }
 
+func (m *mockUserRepository) UpdateTheme(ctx context.Context, userID int64, theme string) error {
+	return nil
+}
+
 func TestAuthService_Login_Success(t *testing.T) {
 	mockRepo := &mockUserRepository{
 		getByUsernameFunc: func(ctx context.Context, username string) (*model.User, error) {
@@ -135,9 +139,6 @@ func TestAuthService_GetProfile_Success(t *testing.T) {
 			return &model.User{
 				BaseModel: model.BaseModel{ID: id},
 				Username:  "testuser",
-				Nickname:  "Test User",
-				Email:     "test@example.com",
-				Phone:     "1234567890",
 				Status:    model.UserStatusActive,
 			}, nil
 		},

@@ -175,6 +175,19 @@ textarea {
   height: auto !important;
 }
 
+.ant-tooltip {
+  max-width: 250px !important;
+}
+
+.ant-tooltip .ant-tooltip-inner {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+  color: #fff !important;
+}
+
+.ant-tooltip .ant-tooltip-arrow-content {
+  background-color: rgba(0, 0, 0, 0.75) !important;
+}
+
 .ant-layout-sider {
   display: flex !important;
   flex-direction: column !important;

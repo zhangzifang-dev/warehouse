@@ -36,11 +36,11 @@ func TestBaseModelSoftDelete(t *testing.T) {
 	now := time.Now()
 	model := BaseModel{
 		ID:        1,
-		DeletedAt: now,
+		DeletedAt: &now,
 	}
 
-	if model.DeletedAt.IsZero() {
-		t.Error("DeletedAt should not be zero")
+	if model.DeletedAt == nil {
+		t.Error("DeletedAt should not be nil")
 	}
 }
 
@@ -62,8 +62,8 @@ func TestBaseModelZeroValues(t *testing.T) {
 	if model.UpdatedBy != 0 {
 		t.Errorf("UpdatedBy = %d, want 0", model.UpdatedBy)
 	}
-	if !model.DeletedAt.IsZero() {
-		t.Errorf("DeletedAt should be zero")
+	if model.DeletedAt != nil {
+		t.Errorf("DeletedAt should be nil")
 	}
 }
 
@@ -102,7 +102,8 @@ func TestBaseModelIsSoftDeleted(t *testing.T) {
 		t.Error("Empty model should not be soft deleted")
 	}
 
-	model.DeletedAt = time.Now()
+	now := time.Now()
+	model.DeletedAt = &now
 	if !model.IsSoftDeleted() {
 		t.Error("Model with DeletedAt should be soft deleted")
 	}

@@ -15,9 +15,6 @@ func TestUserRepository_Create(t *testing.T) {
 	user := &model.User{
 		Username: "testuser",
 		Password: "hashedpassword",
-		Nickname: "Test User",
-		Email:    "test@example.com",
-		Phone:    "1234567890",
 		Status:   model.UserStatusActive,
 	}
 

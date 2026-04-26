@@ -45,6 +45,10 @@ func (m *mockAuthService) ChangePassword(ctx context.Context, userID int64, oldP
 	return errors.New("not implemented")
 }
 
+func (m *mockAuthService) UpdateTheme(ctx context.Context, userID int64, theme string) error {
+	return nil
+}
+
 func setupTestRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
 	return gin.New()
@@ -56,7 +60,6 @@ func TestAuthHandler_Login_Success(t *testing.T) {
 			return "test-token", &model.User{
 				BaseModel: model.BaseModel{ID: 1},
 				Username:  "testuser",
-				Nickname:  "Test User",
 			}, nil
 		},
 	}
@@ -186,9 +189,6 @@ func TestAuthHandler_GetProfile_Success(t *testing.T) {
 			return &model.User{
 				BaseModel: model.BaseModel{ID: userID},
 				Username:  "testuser",
-				Nickname:  "Test User",
-				Email:     "test@example.com",
-				Phone:     "1234567890",
 				Status:    model.UserStatusActive,
 			}, nil
 		},
@@ -390,8 +390,6 @@ func TestAuthHandler_Integration_LoginAndGetProfile(t *testing.T) {
 				BaseModel: model.BaseModel{ID: 1},
 				Username:  "testuser",
 				Password:  "$2a$10$L3paV72KbqXLrVeEaCBNVODAIR661qEjPgB5Em8815WSd19uljYfe",
-				Nickname:  "Test User",
-				Email:     "test@example.com",
 				Status:    model.UserStatusActive,
 			},
 		},
@@ -454,5 +452,9 @@ func (m *mockUserRepositoryForIntegration) GetByID(ctx context.Context, id int64
 
 func (m *mockUserRepositoryForIntegration) Update(ctx context.Context, user *model.User) error {
 	m.users[user.ID] = user
+	return nil
+}
+
+func (m *mockUserRepositoryForIntegration) UpdateTheme(ctx context.Context, userID int64, theme string) error {
 	return nil
 }

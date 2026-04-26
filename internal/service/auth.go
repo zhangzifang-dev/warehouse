@@ -13,6 +13,7 @@ type UserRepository interface {
 	GetByUsername(ctx context.Context, username string) (*model.User, error)
 	GetByID(ctx context.Context, id int64) (*model.User, error)
 	Update(ctx context.Context, user *model.User) error
+	UpdateTheme(ctx context.Context, userID int64, theme string) error
 }
 
 type AuthService struct {
@@ -83,4 +84,11 @@ func (s *AuthService) ChangePassword(ctx context.Context, userID int64, oldPassw
 	}
 
 	return nil
+}
+
+func (s *AuthService) UpdateTheme(ctx context.Context, userID int64, theme string) error {
+	if theme != "light" && theme != "dark" {
+		return apperrors.NewAppError(apperrors.CodeBadRequest, "invalid theme value")
+	}
+	return s.userRepo.UpdateTheme(ctx, userID, theme)
 }

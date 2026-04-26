@@ -199,7 +199,7 @@ export function UserList() {
         onOk={handleAssignRoles}
         onCancel={() => setRoleModalOpen(false)}
         confirmLoading={assignRolesMutation.isPending}
-        width={700}
+        width={600}
       >
         <Transfer
           dataSource={transferDataSource}
@@ -207,7 +207,12 @@ export function UserList() {
           targetKeys={targetKeys}
           onChange={(keys) => setTargetKeys(keys as number[])}
           render={item => item.title}
-          listStyle={{ width: 300, height: 400 }}
+          listStyle={{ width: 250, height: 300 }}
+          showSearch
+          filterOption={(input, item) => 
+            item.title.toLowerCase().includes(input.toLowerCase()) ||
+            item.description?.toLowerCase().includes(input.toLowerCase())
+          }
         />
       </Modal>
     </>

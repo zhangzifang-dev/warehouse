@@ -1,7 +1,10 @@
+export type Theme = 'light' | 'dark'
+
 export interface User {
   id: number
   username: string
   status: number
+  theme: Theme
   created_at: string
   updated_at: string
 }
@@ -19,4 +22,8 @@ export interface LoginResponse {
 export interface ChangePasswordRequest {
   old_password: string
   new_password: string
+}
+
+export interface UpdateThemeRequest {
+  theme: Theme
 }

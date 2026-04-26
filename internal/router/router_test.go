@@ -39,7 +39,7 @@ func TestSetup_PublicRoutes(t *testing.T) {
 		Auth: handler.NewAuthHandler(&mockAuthService{}),
 	}
 
-	Setup(r, jwtSvc, handlers, testFS)
+	Setup(r, jwtSvc, handlers)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
 	w := httptest.NewRecorder()
@@ -62,7 +62,7 @@ func TestSetup_ProtectedRoutes_RequireAuth(t *testing.T) {
 		Warehouse: handler.NewWarehouseHandler(&mockWarehouseService{}),
 	}
 
-	Setup(r, jwtSvc, handlers, testFS)
+	Setup(r, jwtSvc, handlers)
 
 	tests := []struct {
 		name   string
@@ -107,7 +107,7 @@ func TestSetup_ProtectedRoutes_WithValidToken(t *testing.T) {
 		Customer:  handler.NewCustomerHandler(&mockCustomerService{}),
 	}
 
-	Setup(r, jwtSvc, handlers, testFS)
+	Setup(r, jwtSvc, handlers)
 
 	token, _ := jwtSvc.GenerateToken(1, "testuser")
 
@@ -164,7 +164,7 @@ func TestSetup_AllRoutesRegistered(t *testing.T) {
 		AuditLog:      handler.NewAuditLogHandler(&mockAuditLogService{}),
 	}
 
-	Setup(r, jwtSvc, handlers, testFS)
+	Setup(r, jwtSvc, handlers)
 
 	routes := r.Routes()
 
@@ -178,6 +178,7 @@ func TestSetup_AllRoutesRegistered(t *testing.T) {
 		"POST /api/v1/auth/login",
 		"GET /api/v1/auth/profile",
 		"PUT /api/v1/auth/password",
+		"PUT /api/v1/auth/theme",
 		"GET /api/v1/users",
 		"POST /api/v1/users",
 		"GET /api/v1/users/:id",
@@ -271,6 +272,10 @@ func (m *mockAuthService) GetProfile(ctx context.Context, userID int64) (*model.
 }
 
 func (m *mockAuthService) ChangePassword(ctx context.Context, userID int64, oldPassword, newPassword string) error {
+	return nil
+}
+
+func (m *mockAuthService) UpdateTheme(ctx context.Context, userID int64, theme string) error {
 	return nil
 }
 
