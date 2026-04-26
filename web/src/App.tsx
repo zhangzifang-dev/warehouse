@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { ConfigProvider } from 'antd'
+import { ConfigProvider, theme } from 'antd'
 import zhCN from 'antd/locale/zh_CN'
+import './styles/theme.css'
+import { useAuthStore } from './stores/authStore'
 import { MainLayout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Login } from './pages/auth/Login'
@@ -20,8 +22,15 @@ function Dashboard() {
 }
 
 function App() {
+  const { theme: appTheme } = useAuthStore()
+  
   return (
-    <ConfigProvider locale={zhCN}>
+    <ConfigProvider
+      locale={zhCN}
+      theme={{
+        algorithm: appTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
+      }}
+    >
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
