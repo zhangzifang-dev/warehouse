@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"time"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -26,7 +25,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id int64) (*model.User, er
 	err := r.db.NewSelect().
 		Model(user).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -39,7 +38,7 @@ func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*m
 	err := r.db.NewSelect().
 		Model(user).
 		Where("username = ?", username).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +50,7 @@ func (r *UserRepository) List(ctx context.Context, page, pageSize int) ([]model.
 	var users []model.User
 	total, err := r.db.NewSelect().
 		Model(&users).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Order("id DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
@@ -66,7 +65,7 @@ func (r *UserRepository) Update(ctx context.Context, user *model.User) error {
 	_, err := r.db.NewUpdate().
 		Model(user).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -76,7 +75,7 @@ func (r *UserRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.User)(nil)).
 		Set("deleted_at = NOW()").
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -87,8 +86,8 @@ func (r *UserRepository) GetUserRoles(ctx context.Context, userID int64) ([]mode
 		Model(&roles).
 		Join("JOIN user_roles ur ON ur.role_id = role.id").
 		Where("ur.user_id = ?", userID).
-		Where("ur.deleted_at = ?", timeZero).
-		Where("role.deleted_at = ?", timeZero).
+		Where("ur.deleted_at IS NULL").
+		Where("role.deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -103,9 +102,9 @@ func (r *UserRepository) GetUserPermissions(ctx context.Context, userID int64) (
 		Join("JOIN role_permissions rp ON rp.permission_id = permission.id").
 		Join("JOIN user_roles ur ON ur.role_id = rp.role_id").
 		Where("ur.user_id = ?", userID).
-		Where("ur.deleted_at = ?", timeZero).
-		Where("rp.deleted_at = ?", timeZero).
-		Where("permission.deleted_at = ?", timeZero).
+		Where("ur.deleted_at IS NULL").
+		Where("rp.deleted_at IS NULL").
+		Where("permission.deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -156,5 +155,3 @@ func (r *UserRepository) AssignPermissionsToRole(ctx context.Context, roleID int
 	_, err := r.db.NewInsert().Model(&rolePerms).Exec(ctx)
 	return err
 }
-
-var timeZero = time.Time{}

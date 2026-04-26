@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"time"
+	"context"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -26,7 +26,7 @@ func (r *WarehouseRepository) GetByID(ctx context.Context, id int64) (*model.War
 	err := r.db.NewSelect().
 		Model(warehouse).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (r *WarehouseRepository) GetByCode(ctx context.Context, code string) (*mode
 	err := r.db.NewSelect().
 		Model(warehouse).
 		Where("code = ?", code).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (r *WarehouseRepository) List(ctx context.Context, page, pageSize int) ([]m
 	var warehouses []model.Warehouse
 	total, err := r.db.NewSelect().
 		Model(&warehouses).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Order("id DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
@@ -66,7 +66,7 @@ func (r *WarehouseRepository) Update(ctx context.Context, warehouse *model.Wareh
 	_, err := r.db.NewUpdate().
 		Model(warehouse).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -76,7 +76,7 @@ func (r *WarehouseRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.Warehouse)(nil)).
 		Set("deleted_at = ?", time.Now()).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }

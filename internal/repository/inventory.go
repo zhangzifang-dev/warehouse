@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"time"
+	"context"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -26,7 +26,7 @@ func (r *InventoryRepository) GetByID(ctx context.Context, id int64) (*model.Inv
 	err := r.db.NewSelect().
 		Model(inventory).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (r *InventoryRepository) List(ctx context.Context, page, pageSize int, ware
 	var inventories []model.Inventory
 	query := r.db.NewSelect().
 		Model(&inventories).
-		Where("deleted_at = ?", timeZero)
+		Where("deleted_at IS NULL")
 
 	if warehouseID > 0 {
 		query = query.Where("warehouse_id = ?", warehouseID)
@@ -63,7 +63,7 @@ func (r *InventoryRepository) Update(ctx context.Context, inventory *model.Inven
 	_, err := r.db.NewUpdate().
 		Model(inventory).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -73,7 +73,7 @@ func (r *InventoryRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.Inventory)(nil)).
 		Set("deleted_at = ?", time.Now()).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -84,7 +84,7 @@ func (r *InventoryRepository) GetByWarehouseAndProduct(ctx context.Context, ware
 		Model(inventory).
 		Where("warehouse_id = ?", warehouseID).
 		Where("product_id = ?", productID).
-		Where("deleted_at = ?", timeZero)
+		Where("deleted_at IS NULL")
 
 	if batchNo != "" {
 		query = query.Where("batch_no = ?", batchNo)
@@ -102,7 +102,7 @@ func (r *InventoryRepository) UpdateQuantity(ctx context.Context, id int64, quan
 		Model((*model.Inventory)(nil)).
 		Set("quantity = ?", quantity).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }

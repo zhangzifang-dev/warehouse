@@ -99,7 +99,7 @@ export function MainLayout() {
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
             <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
               <Avatar icon={<UserOutlined />} />
-              <span>{user?.nickname || user?.username}</span>
+              <span>{user?.username}</span>
             </div>
           </Dropdown>
         </Header>

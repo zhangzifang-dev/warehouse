@@ -8,10 +8,7 @@ const (
 type User struct {
 	BaseModel
 	Username string `bun:"username,unique" json:"username"`
-	Password string `bun:"password" json:"-"`
-	Nickname string `bun:"nickname" json:"nickname"`
-	Email    string `bun:"email" json:"email"`
-	Phone    string `bun:"phone" json:"phone"`
+	Password string `bun:"password_hash" json:"-"`
 	Status   int    `bun:"status" json:"status"`
 }
 

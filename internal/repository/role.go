@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"time"
+	"context"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -26,7 +26,7 @@ func (r *RoleRepository) GetByID(ctx context.Context, id int64) (*model.Role, er
 	err := r.db.NewSelect().
 		Model(role).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (r *RoleRepository) GetByCode(ctx context.Context, code string) (*model.Rol
 	err := r.db.NewSelect().
 		Model(role).
 		Where("code = ?", code).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (r *RoleRepository) List(ctx context.Context, page, pageSize int) ([]model.
 	var roles []model.Role
 	total, err := r.db.NewSelect().
 		Model(&roles).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Order("id DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
@@ -66,7 +66,7 @@ func (r *RoleRepository) Update(ctx context.Context, role *model.Role) error {
 	_, err := r.db.NewUpdate().
 		Model(role).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -76,7 +76,7 @@ func (r *RoleRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.Role)(nil)).
 		Set("deleted_at = ?", time.Now()).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -104,8 +104,8 @@ func (r *RoleRepository) GetRolePermissions(ctx context.Context, roleID int64) (
 		Model(&permissions).
 		Join("JOIN role_permissions rp ON rp.permission_id = permission.id").
 		Where("rp.role_id = ?", roleID).
-		Where("rp.deleted_at = ?", timeZero).
-		Where("permission.deleted_at = ?", timeZero).
+		Where("rp.deleted_at IS NULL").
+		Where("permission.deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err

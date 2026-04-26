@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"time"
+	"context"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -26,7 +26,7 @@ func (r *CustomerRepository) GetByID(ctx context.Context, id int64) (*model.Cust
 	err := r.db.NewSelect().
 		Model(customer).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (r *CustomerRepository) GetByCode(ctx context.Context, code string) (*model
 	err := r.db.NewSelect().
 		Model(customer).
 		Where("code = ?", code).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (r *CustomerRepository) List(ctx context.Context, page, pageSize int, keywo
 	var customers []model.Customer
 	query := r.db.NewSelect().
 		Model(&customers).
-		Where("deleted_at = ?", timeZero)
+		Where("deleted_at IS NULL")
 
 	if keyword != "" {
 		query = query.Where("name LIKE ? OR code LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
@@ -72,7 +72,7 @@ func (r *CustomerRepository) Update(ctx context.Context, customer *model.Custome
 	_, err := r.db.NewUpdate().
 		Model(customer).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -82,7 +82,7 @@ func (r *CustomerRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.Customer)(nil)).
 		Set("deleted_at = ?", time.Now()).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }

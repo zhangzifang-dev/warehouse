@@ -109,10 +109,7 @@ export function UserList() {
 
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 80 },
-    { title: '用户名', dataIndex: 'username', width: 120 },
-    { title: '昵称', dataIndex: 'nickname', width: 120 },
-    { title: '邮箱', dataIndex: 'email', width: 180 },
-    { title: '电话', dataIndex: 'phone', width: 120 },
+    { title: '用户名', dataIndex: 'username', width: 150 },
     {
       title: '状态',
       dataIndex: 'status',
@@ -191,15 +188,6 @@ export function UserList() {
               <Input.Password />
             </Form.Item>
           )}
-          <Form.Item name="nickname" label="昵称">
-            <Input />
-          </Form.Item>
-          <Form.Item name="email" label="邮箱">
-            <Input />
-          </Form.Item>
-          <Form.Item name="phone" label="电话">
-            <Input />
-          </Form.Item>
           <Form.Item name="status" label="状态" initialValue={1}>
             <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
           </Form.Item>

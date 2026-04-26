@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"time"
+	"context"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -26,7 +26,7 @@ func (r *InboundItemRepository) ListByOrderID(ctx context.Context, orderID int64
 	err := r.db.NewSelect().
 		Model(&items).
 		Where("order_id = ?", orderID).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Order("id ASC").
 		Scan(ctx)
 	if err != nil {
@@ -39,7 +39,7 @@ func (r *InboundItemRepository) Update(ctx context.Context, item *model.InboundI
 	_, err := r.db.NewUpdate().
 		Model(item).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -49,7 +49,7 @@ func (r *InboundItemRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.InboundItem)(nil)).
 		Set("deleted_at = ?", time.Now()).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }

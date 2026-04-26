@@ -25,7 +25,7 @@ func (r *PermissionRepository) GetByID(ctx context.Context, id int64) (*model.Pe
 	err := r.db.NewSelect().
 		Model(perm).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (r *PermissionRepository) GetByCode(ctx context.Context, code string) (*mod
 	err := r.db.NewSelect().
 		Model(perm).
 		Where("code = ?", code).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (r *PermissionRepository) List(ctx context.Context, page, pageSize int) ([]
 	var perms []model.Permission
 	total, err := r.db.NewSelect().
 		Model(&perms).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Order("id DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
@@ -65,7 +65,7 @@ func (r *PermissionRepository) Update(ctx context.Context, perm *model.Permissio
 	_, err := r.db.NewUpdate().
 		Model(perm).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -75,7 +75,7 @@ func (r *PermissionRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.Permission)(nil)).
 		Set("deleted_at = NOW()").
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }

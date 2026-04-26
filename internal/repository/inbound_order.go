@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"time"
+	"context"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -26,7 +26,7 @@ func (r *InboundOrderRepository) GetByID(ctx context.Context, id int64) (*model.
 	err := r.db.NewSelect().
 		Model(order).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (r *InboundOrderRepository) GetByOrderNo(ctx context.Context, orderNo strin
 	err := r.db.NewSelect().
 		Model(order).
 		Where("order_no = ?", orderNo).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (r *InboundOrderRepository) List(ctx context.Context, page, pageSize int, w
 	var orders []model.InboundOrder
 	query := r.db.NewSelect().
 		Model(&orders).
-		Where("deleted_at = ?", timeZero)
+		Where("deleted_at IS NULL")
 
 	if warehouseID > 0 {
 		query = query.Where("warehouse_id = ?", warehouseID)
@@ -76,7 +76,7 @@ func (r *InboundOrderRepository) Update(ctx context.Context, order *model.Inboun
 	_, err := r.db.NewUpdate().
 		Model(order).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -86,7 +86,7 @@ func (r *InboundOrderRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.InboundOrder)(nil)).
 		Set("deleted_at = ?", time.Now()).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }

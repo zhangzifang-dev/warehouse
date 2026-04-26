@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"time"
+	"context"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -26,7 +26,7 @@ func (r *ProductRepository) GetByID(ctx context.Context, id int64) (*model.Produ
 	err := r.db.NewSelect().
 		Model(product).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -39,7 +39,7 @@ func (r *ProductRepository) GetBySKU(ctx context.Context, sku string) (*model.Pr
 	err := r.db.NewSelect().
 		Model(product).
 		Where("sku = ?", sku).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func (r *ProductRepository) List(ctx context.Context, page, pageSize int, catego
 	var products []model.Product
 	query := r.db.NewSelect().
 		Model(&products).
-		Where("deleted_at = ?", timeZero)
+		Where("deleted_at IS NULL")
 
 	if categoryID > 0 {
 		query = query.Where("category_id = ?", categoryID)
@@ -76,7 +76,7 @@ func (r *ProductRepository) Update(ctx context.Context, product *model.Product) 
 	_, err := r.db.NewUpdate().
 		Model(product).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -86,7 +86,7 @@ func (r *ProductRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.Product)(nil)).
 		Set("deleted_at = ?", time.Now()).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }

@@ -31,9 +31,6 @@ func NewUserService(userRepo UserFullRepository) *UserService {
 type CreateUserInput struct {
 	Username string
 	Password string
-	Nickname string
-	Email    string
-	Phone    string
 	Status   int
 }
 
@@ -46,9 +43,6 @@ func (s *UserService) Create(ctx context.Context, input *CreateUserInput) (*mode
 	user := &model.User{
 		Username: input.Username,
 		Password: hashedPassword,
-		Nickname: input.Nickname,
-		Email:    input.Email,
-		Phone:    input.Phone,
 		Status:   input.Status,
 	}
 
@@ -103,10 +97,7 @@ func (s *UserService) List(ctx context.Context, page, pageSize int) (*ListUsersR
 }
 
 type UpdateUserInput struct {
-	Nickname string
-	Email    string
-	Phone    string
-	Status   *int
+	Status *int
 }
 
 func (s *UserService) Update(ctx context.Context, id int64, input *UpdateUserInput) (*model.User, error) {
@@ -115,15 +106,6 @@ func (s *UserService) Update(ctx context.Context, id int64, input *UpdateUserInp
 		return nil, apperrors.NewAppError(apperrors.CodeUserNotFound, "user not found")
 	}
 
-	if input.Nickname != "" {
-		user.Nickname = input.Nickname
-	}
-	if input.Email != "" {
-		user.Email = input.Email
-	}
-	if input.Phone != "" {
-		user.Phone = input.Phone
-	}
 	if input.Status != nil {
 		user.Status = *input.Status
 	}

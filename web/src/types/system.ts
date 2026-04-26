@@ -1,9 +1,6 @@
 export interface User {
   id: number
   username: string
-  nickname: string
-  email: string
-  phone: string
   status: number
   created_at: string
   updated_at: string
@@ -12,16 +9,10 @@ export interface User {
 export interface CreateUserRequest {
   username: string
   password: string
-  nickname?: string
-  email?: string
-  phone?: string
   status?: number
 }
 
 export interface UpdateUserRequest {
-  nickname?: string
-  email?: string
-  phone?: string
   status?: number
 }
 

@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"context"
 	"time"
+	"context"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -26,7 +26,7 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id int64) (*model.Cate
 	err := r.db.NewSelect().
 		Model(category).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -38,7 +38,7 @@ func (r *CategoryRepository) List(ctx context.Context, page, pageSize int, paren
 	var categories []model.Category
 	query := r.db.NewSelect().
 		Model(&categories).
-		Where("deleted_at = ?", timeZero)
+		Where("deleted_at IS NULL")
 
 	if parentID > 0 {
 		query = query.Where("parent_id = ?", parentID)
@@ -63,7 +63,7 @@ func (r *CategoryRepository) Update(ctx context.Context, category *model.Categor
 	_, err := r.db.NewUpdate().
 		Model(category).
 		WherePK().
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -73,7 +73,7 @@ func (r *CategoryRepository) Delete(ctx context.Context, id int64) error {
 		Model((*model.Category)(nil)).
 		Set("deleted_at = ?", time.Now()).
 		Where("id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Exec(ctx)
 	return err
 }
@@ -82,7 +82,7 @@ func (r *CategoryRepository) HasChildren(ctx context.Context, id int64) (bool, e
 	count, err := r.db.NewSelect().
 		Model((*model.Category)(nil)).
 		Where("parent_id = ?", id).
-		Where("deleted_at = ?", timeZero).
+		Where("deleted_at IS NULL").
 		Count(ctx)
 	if err != nil {
 		return false, err

@@ -15,17 +15,11 @@ import (
 type CreateUserRequest struct {
 	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
-	Nickname string `json:"nickname"`
-	Email    string `json:"email"`
-	Phone    string `json:"phone"`
 	Status   *int   `json:"status"`
 }
 
 type UpdateUserRequest struct {
-	Nickname string `json:"nickname"`
-	Email    string `json:"email"`
-	Phone    string `json:"phone"`
-	Status   *int   `json:"status"`
+	Status *int `json:"status"`
 }
 
 type UserListResponse struct {
@@ -65,9 +59,6 @@ func (h *UserHandler) Create(c *gin.Context) {
 	input := &service.CreateUserInput{
 		Username: req.Username,
 		Password: req.Password,
-		Nickname: req.Nickname,
-		Email:    req.Email,
-		Phone:    req.Phone,
 	}
 
 	if req.Status != nil {
@@ -131,10 +122,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 	}
 
 	input := &service.UpdateUserInput{
-		Nickname: req.Nickname,
-		Email:    req.Email,
-		Phone:    req.Phone,
-		Status:   req.Status,
+		Status: req.Status,
 	}
 
 	user, err := h.userService.Update(c.Request.Context(), id, input)
