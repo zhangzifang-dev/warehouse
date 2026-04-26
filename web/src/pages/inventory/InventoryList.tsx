@@ -131,7 +131,7 @@ export function InventoryList() {
         </Tag>
       )
     },
-    { title: '批次号', dataIndex: 'batch_no', width: 100 },
+    { title: '批次号', dataIndex: 'batch_no', width: 150 },
     {
       title: '操作',
       width: 140,
