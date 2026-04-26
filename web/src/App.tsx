@@ -30,8 +30,8 @@ function App() {
       theme={{
         algorithm: appTheme === 'dark' ? theme.darkAlgorithm : theme.defaultAlgorithm,
         token: appTheme === 'dark' ? {
-          colorBorder: '#303030',
-          colorBorderSecondary: '#262626',
+          colorBorder: '#1f1f1f',
+          colorBorderSecondary: '#1a1a1a',
         } : {},
       }}
     >
