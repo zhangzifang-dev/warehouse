@@ -7,8 +7,8 @@ database:
   host: 192.168.1.13
   port: 3306
   name: warehouse
-  user: stkuser
-  password: "zzf#432418"
+  user: devuser
+  password: "123456"
   max_open_conns: 100
   max_idle_conns: 10
 
