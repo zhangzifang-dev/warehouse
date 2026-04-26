@@ -30,10 +30,10 @@ type UpdateWarehouseRequest struct {
 }
 
 type WarehouseListResponse struct {
-	Warehouses []model.Warehouse `json:"warehouses"`
-	Total      int               `json:"total"`
-	Page       int               `json:"page"`
-	Size       int               `json:"size"`
+	Items []model.Warehouse `json:"items"`
+	Total int               `json:"total"`
+	Page  int               `json:"page"`
+	Size  int               `json:"size"`
 }
 
 type WarehouseService interface {
@@ -109,10 +109,10 @@ func (h *WarehouseHandler) List(c *gin.Context) {
 	}
 
 	response.Success(c, WarehouseListResponse{
-		Warehouses: result.Warehouses,
-		Total:      result.Total,
-		Page:       page,
-		Size:       pageSize,
+		Items: result.Warehouses,
+		Total: result.Total,
+		Page:  page,
+		Size:  pageSize,
 	})
 }
 
