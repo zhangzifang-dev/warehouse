@@ -115,16 +115,16 @@ export function ProductList() {
   const categoryTreeData = categories?.items ? buildTreeData(categories.items) : []
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
-    { title: 'SKU', dataIndex: 'sku', width: 120 },
-    { title: '商品名称', dataIndex: 'name' },
-    { title: '规格', dataIndex: 'specification', width: 120, ellipsis: true },
-    { title: '单位', dataIndex: 'unit', width: 80 },
-    { title: '价格', dataIndex: 'price', width: 100 },
+    { title: 'ID', dataIndex: 'id', width: 60 },
+    { title: 'SKU', dataIndex: 'sku', width: 100 },
+    { title: '商品名称', dataIndex: 'name', ellipsis: true },
+    { title: '规格', dataIndex: 'specification', width: 100, ellipsis: true },
+    { title: '单位', dataIndex: 'unit', width: 60 },
+    { title: '价格', dataIndex: 'price', width: 80 },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 100,
+      width: 80,
       render: (status: number) => (
         <Tag color={status === 1 ? 'green' : 'red'}>
           {status === 1 ? '启用' : '禁用'}
@@ -133,14 +133,14 @@ export function ProductList() {
     },
     {
       title: '操作',
-      width: 150,
+      width: 140,
       render: (_: unknown, record: Product) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
             编辑
           </Button>
           <Popconfirm title="确定删除?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除
             </Button>
           </Popconfirm>
@@ -187,6 +187,7 @@ export function ProductList() {
             setPageSize(ps)
           }
         }}
+        scroll={{ x: 'max-content' }}
       />
       <Modal
         title={editingId ? '编辑商品' : '新增商品'}

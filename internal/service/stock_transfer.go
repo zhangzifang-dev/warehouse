@@ -45,16 +45,16 @@ func NewStockTransferService(transferRepo StockTransferRepository, itemRepo Stoc
 
 type CreateStockTransferInput struct {
 	OrderNo         string
-	FromWarehouseID int64
-	ToWarehouseID   int64
-	TotalQuantity   float64
+	SourceWarehouseID int64
+	TargetWarehouseID   int64
+	TotalQty   float64
 	Remark          string
 }
 
 type UpdateStockTransferInput struct {
-	FromWarehouseID *int64
-	ToWarehouseID   *int64
-	TotalQuantity   *float64
+	SourceWarehouseID *int64
+	TargetWarehouseID   *int64
+	TotalQty   *float64
 	Status          *int
 	Remark          *string
 }
@@ -65,23 +65,21 @@ type ListStockTransfersResult struct {
 }
 
 func (s *StockTransferService) Create(ctx context.Context, input *CreateStockTransferInput) (*model.StockTransfer, error) {
-	if input.FromWarehouseID <= 0 {
+	if input.SourceWarehouseID <= 0 {
 		return nil, apperrors.NewAppError(apperrors.CodeBadRequest, "from warehouse ID is required")
 	}
-	if input.ToWarehouseID <= 0 {
+	if input.TargetWarehouseID <= 0 {
 		return nil, apperrors.NewAppError(apperrors.CodeBadRequest, "to warehouse ID is required")
 	}
-	if input.FromWarehouseID == input.ToWarehouseID {
+	if input.SourceWarehouseID == input.TargetWarehouseID {
 		return nil, apperrors.NewAppError(apperrors.CodeBadRequest, "source and target warehouse cannot be the same")
 	}
 
 	transfer := &model.StockTransfer{
-		OrderNo:         input.OrderNo,
-		FromWarehouseID: input.FromWarehouseID,
-		ToWarehouseID:   input.ToWarehouseID,
-		TotalQuantity:   input.TotalQuantity,
-		Status:          0,
-		Remark:          input.Remark,
+		OrderNo:           input.OrderNo,
+		SourceWarehouseID: input.SourceWarehouseID,
+		TargetWarehouseID: input.TargetWarehouseID,
+		Status:            0,
 	}
 
 	err := s.transferRepo.Create(ctx, transfer)
@@ -136,23 +134,17 @@ func (s *StockTransferService) Update(ctx context.Context, id int64, input *Upda
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "stock transfer not found")
 	}
 
-	if input.FromWarehouseID != nil {
-		transfer.FromWarehouseID = *input.FromWarehouseID
+	if input.SourceWarehouseID != nil {
+		transfer.SourceWarehouseID = *input.SourceWarehouseID
 	}
-	if input.ToWarehouseID != nil {
-		transfer.ToWarehouseID = *input.ToWarehouseID
-	}
-	if input.TotalQuantity != nil {
-		transfer.TotalQuantity = *input.TotalQuantity
+	if input.TargetWarehouseID != nil {
+		transfer.TargetWarehouseID = *input.TargetWarehouseID
 	}
 	if input.Status != nil {
 		transfer.Status = *input.Status
 	}
-	if input.Remark != nil {
-		transfer.Remark = *input.Remark
-	}
 
-	if transfer.FromWarehouseID == transfer.ToWarehouseID {
+	if transfer.SourceWarehouseID == transfer.TargetWarehouseID {
 		return nil, apperrors.NewAppError(apperrors.CodeBadRequest, "source and target warehouse cannot be the same")
 	}
 
@@ -200,7 +192,7 @@ func (s *StockTransferService) Confirm(ctx context.Context, id int64) (*model.St
 
 		for _, item := range items {
 			checkResult, err := s.inventorySvc.CheckStock(ctx, &CheckStockInput{
-				WarehouseID: transfer.FromWarehouseID,
+				WarehouseID: transfer.SourceWarehouseID,
 				ProductID:   item.ProductID,
 				BatchNo:     item.BatchNo,
 				Quantity:    item.Quantity,
@@ -215,7 +207,7 @@ func (s *StockTransferService) Confirm(ctx context.Context, id int64) (*model.St
 		}
 
 		for _, item := range items {
-			sourceInventory, err := s.inventorySvc.GetByWarehouseAndProduct(ctx, transfer.FromWarehouseID, item.ProductID, item.BatchNo)
+			sourceInventory, err := s.inventorySvc.GetByWarehouseAndProduct(ctx, transfer.SourceWarehouseID, item.ProductID, item.BatchNo)
 			if err != nil {
 				return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to get source inventory")
 			}
@@ -230,10 +222,10 @@ func (s *StockTransferService) Confirm(ctx context.Context, id int64) (*model.St
 		}
 
 		for _, item := range items {
-			targetInventory, err := s.inventorySvc.GetByWarehouseAndProduct(ctx, transfer.ToWarehouseID, item.ProductID, item.BatchNo)
+			targetInventory, err := s.inventorySvc.GetByWarehouseAndProduct(ctx, transfer.TargetWarehouseID, item.ProductID, item.BatchNo)
 			if err != nil {
 				targetInventory = &model.Inventory{
-					WarehouseID: transfer.ToWarehouseID,
+					WarehouseID: transfer.TargetWarehouseID,
 					ProductID:   item.ProductID,
 					LocationID:  item.LocationID,
 					Quantity:    0,

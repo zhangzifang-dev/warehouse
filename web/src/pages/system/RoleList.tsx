@@ -108,14 +108,14 @@ export function RoleList() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
-    { title: '角色名称', dataIndex: 'name', width: 150 },
-    { title: '角色编码', dataIndex: 'code', width: 150 },
+    { title: 'ID', dataIndex: 'id', width: 60 },
+    { title: '角色名称', dataIndex: 'name', width: 120 },
+    { title: '角色编码', dataIndex: 'code', width: 120 },
     { title: '描述', dataIndex: 'description', ellipsis: true },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 100,
+      width: 80,
       render: (status: number) => (
         <Tag color={status === 1 ? 'green' : 'red'}>
           {status === 1 ? '启用' : '禁用'}
@@ -124,17 +124,17 @@ export function RoleList() {
     },
     {
       title: '操作',
-      width: 220,
+      width: 200,
       render: (_: unknown, record: Role) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
             编辑
           </Button>
-          <Button type="link" icon={<SafetyOutlined />} onClick={() => handleOpenPermModal(record.id)}>
-            分配权限
+          <Button type="link" size="small" icon={<SafetyOutlined />} onClick={() => handleOpenPermModal(record.id)}>
+            权限
           </Button>
           <Popconfirm title="确定删除?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除
             </Button>
           </Popconfirm>
@@ -173,6 +173,7 @@ export function RoleList() {
             setPageSize(ps)
           }
         }}
+        scroll={{ x: 'max-content' }}
       />
       <Modal
         title={editingId ? '编辑角色' : '新增角色'}

@@ -67,49 +67,51 @@ export function InboundOrderList() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
-    { title: '订单编号', dataIndex: 'order_no', width: 180 },
+    { title: 'ID', dataIndex: 'id', width: 60 },
+    { title: '订单编号', dataIndex: 'order_no', width: 140 },
     {
       title: '供应商',
       dataIndex: 'supplier_id',
-      width: 150,
+      width: 100,
+      ellipsis: true,
       render: (id: number | null) => id ? suppliers?.items.find((s: { id: number; name: string }) => s.id === id)?.name || id : '-'
     },
     {
       title: '仓库',
       dataIndex: 'warehouse_id',
-      width: 150,
+      width: 100,
+      ellipsis: true,
       render: (id: number) => warehouses?.items.find((w: { id: number; name: string }) => w.id === id)?.name || id
     },
-    { title: '总数量', dataIndex: 'total_quantity', width: 100 },
+    { title: '总数量', dataIndex: 'total_quantity', width: 80 },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 100,
+      width: 80,
       render: (status: number) => {
         const s = statusMap[status] || { text: '未知', color: 'default' }
         return <Tag color={s.color}>{s.text}</Tag>
       }
     },
     { title: '备注', dataIndex: 'remark', ellipsis: true },
-    { title: '创建时间', dataIndex: 'created_at', width: 180 },
+    { title: '创建时间', dataIndex: 'created_at', width: 150 },
     {
       title: '操作',
-      width: 180,
+      width: 160,
       render: (_: unknown, record: InboundOrder) => (
         <Space>
-          <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewDetail(record.id)}>
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetail(record.id)}>
             详情
           </Button>
           {record.status === 0 && (
             <Popconfirm title="确认入库?" onConfirm={() => confirmMutation.mutate(record.id)}>
-              <Button type="link" icon={<CheckOutlined />}>
+              <Button type="link" size="small" icon={<CheckOutlined />}>
                 确认
               </Button>
             </Popconfirm>
           )}
           <Popconfirm title="确定删除?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除
             </Button>
           </Popconfirm>
@@ -143,6 +145,7 @@ export function InboundOrderList() {
             setPageSize(ps)
           }
         }}
+        scroll={{ x: 'max-content' }}
       />
       <Drawer
         title="入库单详情"

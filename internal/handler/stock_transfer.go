@@ -14,16 +14,16 @@ import (
 
 type CreateStockTransferRequest struct {
 	OrderNo         string  `json:"order_no"`
-	FromWarehouseID int64   `json:"from_warehouse_id" binding:"required"`
-	ToWarehouseID   int64   `json:"to_warehouse_id" binding:"required"`
-	TotalQuantity   float64 `json:"total_quantity"`
+	SourceWarehouseID int64   `json:"from_warehouse_id" binding:"required"`
+	TargetWarehouseID   int64   `json:"to_warehouse_id" binding:"required"`
+	TotalQty   float64 `json:"total_quantity"`
 	Remark          string  `json:"remark"`
 }
 
 type UpdateStockTransferRequest struct {
-	FromWarehouseID *int64   `json:"from_warehouse_id,omitempty"`
-	ToWarehouseID   *int64   `json:"to_warehouse_id,omitempty"`
-	TotalQuantity   *float64 `json:"total_quantity,omitempty"`
+	SourceWarehouseID *int64   `json:"from_warehouse_id,omitempty"`
+	TargetWarehouseID   *int64   `json:"to_warehouse_id,omitempty"`
+	TotalQty   *float64 `json:"total_quantity,omitempty"`
 	Status          *int     `json:"status,omitempty"`
 	Remark          *string  `json:"remark,omitempty"`
 }
@@ -63,9 +63,9 @@ func (h *StockTransferHandler) Create(c *gin.Context) {
 
 	input := &service.CreateStockTransferInput{
 		OrderNo:         req.OrderNo,
-		FromWarehouseID: req.FromWarehouseID,
-		ToWarehouseID:   req.ToWarehouseID,
-		TotalQuantity:   req.TotalQuantity,
+		SourceWarehouseID: req.SourceWarehouseID,
+		TargetWarehouseID:   req.TargetWarehouseID,
+		TotalQty:   req.TotalQty,
 		Remark:          req.Remark,
 	}
 
@@ -129,9 +129,9 @@ func (h *StockTransferHandler) Update(c *gin.Context) {
 	}
 
 	input := &service.UpdateStockTransferInput{
-		FromWarehouseID: req.FromWarehouseID,
-		ToWarehouseID:   req.ToWarehouseID,
-		TotalQuantity:   req.TotalQuantity,
+		SourceWarehouseID: req.SourceWarehouseID,
+		TargetWarehouseID:   req.TargetWarehouseID,
+		TotalQty:   req.TotalQty,
 		Status:          req.Status,
 		Remark:          req.Remark,
 	}

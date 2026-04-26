@@ -40,6 +40,7 @@ func main() {
 	inboundItemRepo := repository.NewInboundItemRepository(db)
 	outboundOrderRepo := repository.NewOutboundOrderRepository(db)
 	outboundItemRepo := repository.NewOutboundItemRepository(db)
+	stockTransferRepo := repository.NewStockTransferRepository(db)
 	auditLogRepo := repository.NewAuditLogRepository(db)
 
 	expireDuration, err := time.ParseDuration(cfg.JWT.Expire)
@@ -61,7 +62,7 @@ func main() {
 	customerService := service.NewCustomerService(customerRepo)
 	inboundOrderService := service.NewInboundOrderService(inboundOrderRepo, inboundItemRepo, inventoryService)
 	outboundOrderService := service.NewOutboundOrderService(outboundOrderRepo, outboundItemRepo, inventoryService)
-	stockTransferService := service.NewStockTransferService(nil, nil, inventoryService)
+	stockTransferService := service.NewStockTransferService(stockTransferRepo, nil, inventoryService)
 	auditLogService := service.NewAuditLogService(auditLogRepo)
 
 	authHandler := handler.NewAuthHandler(authService)

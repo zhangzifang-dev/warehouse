@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Tag } from 'antd'
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { PlusOutlined, EditOutlined, DeleteOutlined, RightOutlined, DownOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { categoryApi } from '../../api/category'
 import type { Category, CreateCategoryRequest, UpdateCategoryRequest } from '../../types/product'
@@ -96,13 +96,23 @@ export function CategoryList() {
   const treeData = data?.items ? buildTree(data.items) : []
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
+    {
+      title: '',
+      width: 24,
+      render: (_: unknown, record: Category) => {
+        if (record.children && record.children.length > 0) {
+          return null
+        }
+        return null
+      }
+    },
+    { title: 'ID', dataIndex: 'id', width: 60 },
     { title: '分类名称', dataIndex: 'name' },
-    { title: '排序', dataIndex: 'sort_order', width: 80 },
+    { title: '排序', dataIndex: 'sort_order', width: 60 },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 100,
+      width: 80,
       render: (status: number) => (
         <Tag color={status === 1 ? 'green' : 'red'}>
           {status === 1 ? '启用' : '禁用'}
@@ -111,14 +121,14 @@ export function CategoryList() {
     },
     {
       title: '操作',
-      width: 150,
+      width: 140,
       render: (_: unknown, record: Category) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
             编辑
           </Button>
           <Popconfirm title="确定删除?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除
             </Button>
           </Popconfirm>
@@ -126,6 +136,24 @@ export function CategoryList() {
       )
     }
   ]
+
+  const customExpandIcon = (props: { expanded: boolean; onExpand: (record: Category, e: React.MouseEvent<HTMLElement>) => void; record: Category }) => {
+    const { expanded, onExpand, record } = props
+    if (record.children && record.children.length > 0) {
+      return expanded ? (
+        <DownOutlined
+          onClick={(e) => onExpand(record, e)}
+          style={{ cursor: 'pointer', fontSize: 10, color: '#666' }}
+        />
+      ) : (
+        <RightOutlined
+          onClick={(e) => onExpand(record, e)}
+          style={{ cursor: 'pointer', fontSize: 10, color: '#666' }}
+        />
+      )
+    }
+    return <span style={{ display: 'inline-block', width: 14 }} />
+  }
 
   return (
     <>
@@ -142,6 +170,12 @@ export function CategoryList() {
         loading={isLoading}
         pagination={false}
         defaultExpandAllRows
+        expandable={{
+          expandIcon: customExpandIcon,
+          columnWidth: 24,
+        }}
+        indentSize={0}
+        scroll={{ x: 'max-content' }}
       />
       <Modal
         title={editingId ? '编辑分类' : '新增分类'}
@@ -158,9 +192,7 @@ export function CategoryList() {
             <Select
               allowClear
               placeholder="选择父级分类（可选）"
-              options={data?.items
-                .filter((c: Category) => c.id !== editingId)
-                .map((c: Category) => ({ value: c.id, label: c.name }))}
+              options={data?.items?.filter((c: Category) => c.id !== editingId).map((c: Category) => ({ value: c.id, label: c.name })) || []}
             />
           </Form.Item>
           <Form.Item name="sort_order" label="排序" initialValue={0}>

@@ -61,49 +61,49 @@ export function StockTransferList() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
-    { title: '调拨单号', dataIndex: 'order_no', width: 180 },
+    { title: 'ID', dataIndex: 'id', width: 60 },
+    { title: '调拨单号', dataIndex: 'order_no', width: 140 },
     {
       title: '调出仓库',
-      dataIndex: 'from_warehouse_id',
-      width: 150,
-      render: (id: number) => warehouses?.items.find(w => w.id === id)?.name || id
+      dataIndex: 'source_warehouse_id',
+      width: 100,
+      ellipsis: true,
+      render: (id: number) => warehouses?.items?.find(w => w.id === id)?.name || id
     },
     {
       title: '调入仓库',
-      dataIndex: 'to_warehouse_id',
-      width: 150,
-      render: (id: number) => warehouses?.items.find(w => w.id === id)?.name || id
+      dataIndex: 'target_warehouse_id',
+      width: 100,
+      ellipsis: true,
+      render: (id: number) => warehouses?.items?.find(w => w.id === id)?.name || id
     },
-    { title: '总数量', dataIndex: 'total_quantity', width: 100 },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 100,
+      width: 80,
       render: (status: number) => {
         const s = statusMap[status] || { text: '未知', color: 'default' }
         return <Tag color={s.color}>{s.text}</Tag>
       }
     },
-    { title: '备注', dataIndex: 'remark', ellipsis: true },
-    { title: '创建时间', dataIndex: 'created_at', width: 180 },
+    { title: '创建时间', dataIndex: 'created_at', width: 150 },
     {
       title: '操作',
-      width: 180,
+      width: 160,
       render: (_: unknown, record: StockTransfer) => (
         <Space>
-          <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewDetail(record.id)}>
+          <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetail(record.id)}>
             详情
           </Button>
           {record.status === 0 && (
             <Popconfirm title="确认调拨?" onConfirm={() => confirmMutation.mutate(record.id)}>
-              <Button type="link" icon={<CheckOutlined />}>
+              <Button type="link" size="small" icon={<CheckOutlined />}>
                 确认
               </Button>
             </Popconfirm>
           )}
           <Popconfirm title="确定删除?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除
             </Button>
           </Popconfirm>
@@ -113,7 +113,7 @@ export function StockTransferList() {
   ]
 
   const itemColumns = [
-    { title: '商品', dataIndex: 'product_id', render: (id: number) => products?.items.find((p: { id: number; name: string }) => p.id === id)?.name || id },
+    { title: '商品', dataIndex: 'product_id', render: (id: number) => products?.items?.find((p: { id: number; name: string }) => p.id === id)?.name || id },
     { title: '数量', dataIndex: 'quantity', width: 100 },
     { title: '批次号', dataIndex: 'batch_no', width: 120 }
   ]
@@ -137,6 +137,7 @@ export function StockTransferList() {
             setPageSize(ps)
           }
         }}
+        scroll={{ x: 'max-content' }}
       />
       <Drawer
         title="调拨单详情"
@@ -154,14 +155,12 @@ export function StockTransferList() {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label="调出仓库">
-                {warehouses?.items.find(w => w.id === selectedOrder.from_warehouse_id)?.name}
+                {warehouses?.items?.find(w => w.id === selectedOrder.source_warehouse_id)?.name}
               </Descriptions.Item>
               <Descriptions.Item label="调入仓库">
-                {warehouses?.items.find(w => w.id === selectedOrder.to_warehouse_id)?.name}
+                {warehouses?.items?.find(w => w.id === selectedOrder.target_warehouse_id)?.name}
               </Descriptions.Item>
-              <Descriptions.Item label="总数量">{selectedOrder.total_quantity}</Descriptions.Item>
               <Descriptions.Item label="创建时间">{selectedOrder.created_at}</Descriptions.Item>
-              <Descriptions.Item label="备注" span={2}>{selectedOrder.remark || '-'}</Descriptions.Item>
             </Descriptions>
             <h4 style={{ marginTop: 16 }}>商品明细</h4>
             <Table

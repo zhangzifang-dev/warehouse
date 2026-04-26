@@ -83,22 +83,23 @@ export function LocationList() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
-    { title: '库位编码', dataIndex: 'code', width: 150 },
+    { title: 'ID', dataIndex: 'id', width: 60 },
+    { title: '库位编码', dataIndex: 'code', width: 100 },
     {
       title: '所属仓库',
       dataIndex: 'warehouse_id',
-      width: 150,
-      render: (id: number) => warehouses?.items.find(w => w.id === id)?.name || id
+      width: 100,
+      ellipsis: true,
+      render: (id: number) => warehouses?.items?.find(w => w.id === id)?.name || id
     },
-    { title: '区域', dataIndex: 'zone', width: 80 },
-    { title: '货架', dataIndex: 'shelf', width: 80 },
-    { title: '层', dataIndex: 'level', width: 80 },
-    { title: '位', dataIndex: 'position', width: 80 },
+    { title: '区域', dataIndex: 'zone', width: 60 },
+    { title: '货架', dataIndex: 'shelf', width: 60 },
+    { title: '层', dataIndex: 'level', width: 60 },
+    { title: '位', dataIndex: 'position', width: 60 },
     {
       title: '状态',
       dataIndex: 'status',
-      width: 100,
+      width: 80,
       render: (status: number) => (
         <Tag color={status === 1 ? 'green' : 'red'}>
           {status === 1 ? '启用' : '禁用'}
@@ -107,14 +108,14 @@ export function LocationList() {
     },
     {
       title: '操作',
-      width: 150,
+      width: 140,
       render: (_: unknown, record: Location) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
             编辑
           </Button>
           <Popconfirm title="确定删除?" onConfirm={() => deleteMutation.mutate(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />}>
               删除
             </Button>
           </Popconfirm>
@@ -133,7 +134,7 @@ export function LocationList() {
           style={{ width: 200 }}
           value={warehouseFilter}
           onChange={setWarehouseFilter}
-          options={warehouses?.items.map(w => ({ value: w.id, label: w.name }))}
+          options={warehouses?.items?.map(w => ({ value: w.id, label: w.name })) || []}
         />
         <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
           新增库位
@@ -155,6 +156,7 @@ export function LocationList() {
             setPageSize(ps)
           }
         }}
+        scroll={{ x: 'max-content' }}
       />
       <Modal
         title={editingId ? '编辑库位' : '新增库位'}
@@ -166,7 +168,7 @@ export function LocationList() {
         <Form form={form} layout="vertical">
           <Form.Item name="warehouse_id" label="所属仓库" rules={[{ required: true, message: '请选择仓库' }]}>
             <Select
-              options={warehouses?.items.map(w => ({ value: w.id, label: w.name }))}
+              options={warehouses?.items?.map(w => ({ value: w.id, label: w.name })) || []}
             />
           </Form.Item>
           <Form.Item name="zone" label="区域" rules={[{ required: true, message: '请输入区域' }]}>

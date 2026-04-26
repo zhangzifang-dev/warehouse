@@ -56,12 +56,10 @@ func (i *OutboundItem) TableName() string {
 
 type StockTransfer struct {
 	BaseModel
-	OrderNo         string  `bun:"order_no,notnull,unique" json:"order_no"`
-	FromWarehouseID int64   `bun:"from_warehouse_id,notnull" json:"from_warehouse_id"`
-	ToWarehouseID   int64   `bun:"to_warehouse_id,notnull" json:"to_warehouse_id"`
-	TotalQuantity   float64 `bun:"total_quantity,notnull" json:"total_quantity"`
-	Status          int     `bun:"status,notnull" json:"status"`
-	Remark          string  `bun:"remark" json:"remark"`
+	OrderNo           string `bun:"order_no,notnull,unique" json:"order_no"`
+	SourceWarehouseID int64  `bun:"source_warehouse_id,notnull" json:"source_warehouse_id"`
+	TargetWarehouseID int64  `bun:"target_warehouse_id,notnull" json:"target_warehouse_id"`
+	Status            int    `bun:"status,notnull" json:"status"`
 }
 
 func (s *StockTransfer) TableName() string {

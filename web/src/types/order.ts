@@ -77,11 +77,9 @@ export interface CreateOutboundItemRequest {
 export interface StockTransfer {
   id: number
   order_no: string
-  from_warehouse_id: number
-  to_warehouse_id: number
-  total_quantity: number
+  source_warehouse_id: number
+  target_warehouse_id: number
   status: number
-  remark: string
   created_at: string
   updated_at: string
   items?: StockTransferItem[]
@@ -99,9 +97,8 @@ export interface StockTransferItem {
 }
 
 export interface CreateStockTransferRequest {
-  from_warehouse_id: number
-  to_warehouse_id: number
-  remark?: string
+  source_warehouse_id: number
+  target_warehouse_id: number
   items: CreateStockTransferItemRequest[]
 }
 

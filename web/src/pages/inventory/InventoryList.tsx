@@ -107,38 +107,40 @@ export function InventoryList() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 80 },
+    { title: 'ID', dataIndex: 'id', width: 60 },
     {
       title: '仓库',
       dataIndex: 'warehouse_id',
-      width: 150,
-      render: (id: number) => warehouses?.items.find(w => w.id === id)?.name || id
+      width: 100,
+      ellipsis: true,
+      render: (id: number) => warehouses?.items?.find(w => w.id === id)?.name || id
     },
     {
       title: '商品',
       dataIndex: 'product_id',
-      render: (id: number) => products?.items.find(p => p.id === id)?.name || id
+      ellipsis: true,
+      render: (id: number) => products?.items?.find(p => p.id === id)?.name || id
     },
     {
       title: '数量',
       dataIndex: 'quantity',
-      width: 120,
+      width: 80,
       render: (qty: number) => (
         <Tag color={qty > 0 ? 'green' : qty < 0 ? 'red' : 'default'}>
           {qty}
         </Tag>
       )
     },
-    { title: '批次号', dataIndex: 'batch_no', width: 120 },
+    { title: '批次号', dataIndex: 'batch_no', width: 100 },
     {
       title: '操作',
-      width: 180,
+      width: 140,
       render: (_: unknown, record: Inventory) => (
         <Space>
-          <Button type="link" icon={<ToolOutlined />} onClick={() => handleOpenAdjust(record)}>
+          <Button type="link" size="small" icon={<ToolOutlined />} onClick={() => handleOpenAdjust(record)}>
             调整
           </Button>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleOpenEdit(record)}>
             编辑
           </Button>
         </Space>
@@ -156,7 +158,7 @@ export function InventoryList() {
           style={{ width: 200 }}
           value={warehouseFilter}
           onChange={setWarehouseFilter}
-          options={warehouses?.items.map(w => ({ value: w.id, label: w.name }))}
+          options={warehouses?.items?.map(w => ({ value: w.id, label: w.name })) || []}
         />
         <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
           新增库存
@@ -178,6 +180,7 @@ export function InventoryList() {
             setPageSize(ps)
           }
         }}
+        scroll={{ x: 'max-content' }}
       />
       <Modal
         title={editingId ? '编辑库存' : '新增库存'}
@@ -189,14 +192,14 @@ export function InventoryList() {
         <Form form={form} layout="vertical">
           <Form.Item name="warehouse_id" label="仓库" rules={[{ required: true, message: '请选择仓库' }]}>
             <Select
-              options={warehouses?.items.map(w => ({ value: w.id, label: w.name }))}
+              options={warehouses?.items?.map(w => ({ value: w.id, label: w.name })) || []}
             />
           </Form.Item>
           <Form.Item name="product_id" label="商品" rules={[{ required: true, message: '请选择商品' }]}>
             <Select
               showSearch
               optionFilterProp="label"
-              options={products?.items.map((p: { id: number; sku: string; name: string }) => ({ value: p.id, label: `${p.sku} - ${p.name}` }))}
+              options={products?.items?.map((p: { id: number; sku: string; name: string }) => ({ value: p.id, label: `${p.sku} - ${p.name}` })) || []}
             />
           </Form.Item>
           <Form.Item name="quantity" label="数量">

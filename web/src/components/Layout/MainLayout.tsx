@@ -25,21 +25,43 @@ const menuItems = [
   { key: '/users', icon: <UserOutlined />, label: '用户管理' },
   { key: '/roles', icon: <TeamOutlined />, label: '角色管理' },
   { key: '/warehouses', icon: <HomeOutlined />, label: '仓库管理' },
+  { key: '/locations', icon: <AppstoreOutlined />, label: '库位管理' },
   { key: '/products', icon: <AppstoreOutlined />, label: '商品管理' },
+  { key: '/categories', icon: <AppstoreOutlined />, label: '分类管理' },
   { key: '/suppliers', icon: <UserOutlined />, label: '供应商管理' },
   { key: '/customers', icon: <TeamOutlined />, label: '客户管理' },
+  { key: '/inventory', icon: <AppstoreOutlined />, label: '库存管理' },
   { key: '/inbound', icon: <ShoppingCartOutlined />, label: '入库管理' },
   { key: '/outbound', icon: <ContainerOutlined />, label: '出库管理' },
   { key: '/transfers', icon: <SwapOutlined />, label: '库存调拨' },
   { key: '/audit-logs', icon: <FileSearchOutlined />, label: '审计日志' },
 ]
 
+const pageTitle: Record<string, string> = {
+  '/dashboard': '仪表盘',
+  '/users': '用户管理',
+  '/roles': '角色管理',
+  '/permissions': '权限管理',
+  '/warehouses': '仓库管理',
+  '/locations': '库位管理',
+  '/products': '商品管理',
+  '/categories': '分类管理',
+  '/suppliers': '供应商管理',
+  '/customers': '客户管理',
+  '/inventory': '库存管理',
+  '/inbound': '入库管理',
+  '/outbound': '出库管理',
+  '/transfers': '库存调拨',
+  '/audit-logs': '审计日志',
+  '/change-password': '修改密码',
+}
+
 export function MainLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
-  const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken()
+  const { token: { colorBgContainer } } = theme.useToken()
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key)
@@ -70,44 +92,58 @@ export function MainLayout() {
       <Sider trigger={null} collapsible collapsed={collapsed}>
         <div style={{
           height: 32,
-          margin: 16,
-          background: 'rgba(255, 255, 255, 0.2)',
-          borderRadius: 6,
-        }} />
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={handleMenuClick}
-        />
-      </Sider>
-      <Layout>
-        <Header style={{
-          padding: '0 16px',
-          background: colorBgContainer,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          padding: collapsed ? 0 : '0 16px',
+          borderBottom: '1px solid rgba(255,255,255,0.15)',
+          flexShrink: 0,
+          background: 'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, transparent 100%)',
         }}>
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
-            style={{ fontSize: '16px', width: 64, height: 64 }}
+            style={{ fontSize: '14px', color: '#fff' }}
           />
+        </div>
+        <div className="sider-menu-scroll" style={{
+          flex: 1,
+          overflowY: 'auto',
+          overflowX: 'hidden',
+        }}>
+          <Menu
+            theme="dark"
+            mode="inline"
+            selectedKeys={[location.pathname]}
+            items={menuItems}
+            onClick={handleMenuClick}
+          />
+        </div>
+      </Sider>
+      <Layout>
+        <Header style={{
+          height: 32,
+          lineHeight: '32px',
+          padding: '0 16px',
+          background: 'linear-gradient(90deg, #f8fafc 0%, #fff 50%, #f8fafc 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: '1px solid #e8e8e8',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
+        }}>
+          <span style={{ fontSize: 14, fontWeight: 500 }}>{pageTitle[location.pathname] || '未知页面'}</span>
           <Dropdown menu={{ items: userMenuItems }} placement="bottomRight">
-            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Avatar icon={<UserOutlined />} />
-              <span>{user?.username}</span>
+            <div style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Avatar icon={<UserOutlined />} size="small" />
+              <span style={{ fontSize: 12 }}>{user?.username}</span>
             </div>
           </Dropdown>
         </Header>
         <Content style={{
-          margin: '24px 16px',
-          padding: 24,
+          padding: 8,
           background: colorBgContainer,
-          borderRadius: borderRadiusLG,
           minHeight: 280,
         }}>
           <Outlet />
