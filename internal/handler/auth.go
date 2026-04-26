@@ -26,10 +26,15 @@ type ChangePasswordRequest struct {
 	NewPassword string `json:"new_password" binding:"required"`
 }
 
+type UpdateThemeRequest struct {
+	Theme string `json:"theme" binding:"required"`
+}
+
 type AuthService interface {
 	Login(ctx context.Context, username, password string) (string, *model.User, error)
 	GetProfile(ctx context.Context, userID int64) (*model.User, error)
 	ChangePassword(ctx context.Context, userID int64, oldPassword, newPassword string) error
+	UpdateTheme(ctx context.Context, userID int64, theme string) error
 }
 
 type AuthHandler struct {
@@ -91,6 +96,28 @@ func (h *AuthHandler) ChangePassword(c *gin.Context) {
 	}
 
 	err := h.authService.ChangePassword(c.Request.Context(), userID, req.OldPassword, req.NewPassword)
+	if err != nil {
+		handleAuthError(c, err)
+		return
+	}
+
+	response.Success(c, nil)
+}
+
+func (h *AuthHandler) UpdateTheme(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == 0 {
+		response.Error(c, apperrors.CodeUnauthorized, "user not authenticated")
+		return
+	}
+
+	var req UpdateThemeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, apperrors.CodeBadRequest, "invalid request body")
+		return
+	}
+
+	err := h.authService.UpdateTheme(c.Request.Context(), userID, req.Theme)
 	if err != nil {
 		handleAuthError(c, err)
 		return
