@@ -10,6 +10,7 @@ type User struct {
 	Username string `bun:"username,unique" json:"username"`
 	Password string `bun:"password_hash" json:"-"`
 	Status   int    `bun:"status" json:"status"`
+	Theme    string `bun:"theme" json:"theme"`
 }
 
 func (u *User) IsActive() bool {
