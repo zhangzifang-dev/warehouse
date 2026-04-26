@@ -35,10 +35,22 @@ function App() {
           colorBorderSecondary: '#1a1a1a',
           colorBgContainer: '#141414',
           colorBgElevated: '#1f1f1f',
+          paddingXS: 4,
+          paddingSM: 8,
+          padding: 12,
+          controlHeight: 28,
+          controlHeightSM: 24,
+          controlHeightLG: 32,
         } : {
           colorPrimary: '#1890ff',
           colorBorder: '#f0f0f0',
           colorBorderSecondary: '#f5f5f5',
+          paddingXS: 4,
+          paddingSM: 8,
+          padding: 12,
+          controlHeight: 28,
+          controlHeightSM: 24,
+          controlHeightLG: 32,
         },
       }}
     >
