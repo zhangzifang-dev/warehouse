@@ -99,7 +99,11 @@ func (h *StockTransferHandler) List(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
 	fromWarehouseID, _ := strconv.ParseInt(c.Query("from_warehouse_id"), 10, 64)
 	toWarehouseID, _ := strconv.ParseInt(c.Query("to_warehouse_id"), 10, 64)
-	status, _ := strconv.Atoi(c.Query("status"))
+	
+	status := -1
+	if c.Query("status") != "" {
+		status, _ = strconv.Atoi(c.Query("status"))
+	}
 
 	result, err := h.stockTransferService.List(c.Request.Context(), page, pageSize, int(fromWarehouseID), int(toWarehouseID), status)
 	if err != nil {
