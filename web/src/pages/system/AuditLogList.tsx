@@ -98,10 +98,46 @@ export function AuditLogList() {
     if (!value || Object.keys(value).length === 0) {
       return <span style={{ color: '#999' }}>无</span>
     }
+    
+    try {
+      const dataStr = value.data as string
+      if (dataStr) {
+        const parsed = JSON.parse(dataStr)
+        return (
+          <div style={{ 
+            background: '#f5f5f5', 
+            padding: 8, 
+            borderRadius: 4, 
+            maxHeight: 200, 
+            overflow: 'auto',
+            fontSize: 12,
+            wordBreak: 'break-all'
+          }}>
+            {Object.entries(parsed).map(([key, val]) => (
+              <div key={key} style={{ marginBottom: 4 }}>
+                <span style={{ fontWeight: 500, color: '#1890ff' }}>{key}: </span>
+                <span>{String(val)}</span>
+              </div>
+            ))}
+          </div>
+        )
+      }
+    } catch {
+      return <span style={{ color: '#999' }}>解析失败</span>
+    }
+    
     return (
-      <pre style={{ background: '#f5f5f5', padding: 12, borderRadius: 4, maxHeight: 300, overflow: 'auto' }}>
-        {JSON.stringify(value, null, 2)}
-      </pre>
+      <div style={{ 
+        background: '#f5f5f5', 
+        padding: 8, 
+        borderRadius: 4, 
+        maxHeight: 200, 
+        overflow: 'auto',
+        fontSize: 12,
+        wordBreak: 'break-all'
+      }}>
+        {JSON.stringify(value)}
+      </div>
     )
   }
 
@@ -151,10 +187,10 @@ export function AuditLogList() {
         open={detailOpen}
         onCancel={() => setDetailOpen(false)}
         footer={null}
-        width={700}
+        width={600}
       >
         {selectedLog && (
-          <Descriptions column={2} bordered>
+          <Descriptions column={2} size="small" bordered labelStyle={{ width: 100 }}>
             <Descriptions.Item label="ID">{selectedLog.id}</Descriptions.Item>
             <Descriptions.Item label="表名">{selectedLog.table_name}</Descriptions.Item>
             <Descriptions.Item label="记录ID">{selectedLog.record_id}</Descriptions.Item>
@@ -164,7 +200,7 @@ export function AuditLogList() {
               </Tag>
             </Descriptions.Item>
             <Descriptions.Item label="操作人ID">{selectedLog.operated_by}</Descriptions.Item>
-            <Descriptions.Item label="IP地址">{selectedLog.ip_address}</Descriptions.Item>
+            <Descriptions.Item label="IP地址">{selectedLog.ip_address || '-'}</Descriptions.Item>
             <Descriptions.Item label="操作时间" span={2}>
               {dayjs(selectedLog.operated_at).format('YYYY-MM-DD HH:mm:ss')}
             </Descriptions.Item>
