@@ -4,10 +4,10 @@ import type { PaginatedResponse } from '../types/warehouse'
 
 export const roleApi = {
   list: async (page = 1, size = 10): Promise<PaginatedResponse<Role>> => {
-    const response = await api.get<{ roles: Role[]; total: number; page: number; size: number }>('/roles', {
+    const response = await api.get<PaginatedResponse<Role>>('/roles', {
       params: { page, size }
     })
-    return { items: response.data.roles, total: response.data.total, page: response.data.page, size: response.data.size }
+    return response.data
   },
 
   get: async (id: number): Promise<Role> => {
