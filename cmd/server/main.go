@@ -53,7 +53,8 @@ func main() {
 	userService := service.NewUserService(userRepo)
 	roleService := service.NewRoleService(roleRepo)
 	permissionService := service.NewPermissionService(permissionRepo)
-	warehouseService := service.NewWarehouseService(warehouseRepo)
+	auditLogService := service.NewAuditLogService(auditLogRepo)
+	warehouseService := service.NewWarehouseService(warehouseRepo, auditLogService)
 	locationService := service.NewLocationService(locationRepo, warehouseRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
 	productService := service.NewProductService(productRepo)
@@ -63,7 +64,6 @@ func main() {
 	inboundOrderService := service.NewInboundOrderService(inboundOrderRepo, inboundItemRepo, inventoryService)
 	outboundOrderService := service.NewOutboundOrderService(outboundOrderRepo, outboundItemRepo, inventoryService)
 	stockTransferService := service.NewStockTransferService(stockTransferRepo, nil, inventoryService)
-	auditLogService := service.NewAuditLogService(auditLogRepo)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)

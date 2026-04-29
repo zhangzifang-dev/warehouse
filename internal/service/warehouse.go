@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -16,13 +17,19 @@ type WarehouseRepository interface {
 	Delete(ctx context.Context, id int64) error
 }
 
-type WarehouseService struct {
-	warehouseRepo WarehouseRepository
+type AuditLogger interface {
+	Log(ctx context.Context, input *CreateAuditLogInput) error
 }
 
-func NewWarehouseService(warehouseRepo WarehouseRepository) *WarehouseService {
+type WarehouseService struct {
+	warehouseRepo WarehouseRepository
+	auditLogger   AuditLogger
+}
+
+func NewWarehouseService(warehouseRepo WarehouseRepository, auditLogger AuditLogger) *WarehouseService {
 	return &WarehouseService{
 		warehouseRepo: warehouseRepo,
+		auditLogger:   auditLogger,
 	}
 }
 
@@ -75,6 +82,17 @@ func (s *WarehouseService) Create(ctx context.Context, input *CreateWarehouseInp
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create warehouse")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(warehouse)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "warehouses",
+			RecordID:   warehouse.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: warehouse.CreatedBy,
+		})
+	}
+
 	return warehouse, nil
 }
 
@@ -114,6 +132,11 @@ func (s *WarehouseService) Update(ctx context.Context, id int64, input *UpdateWa
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "warehouse not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(warehouse)
+	}
+
 	if input.Name != "" {
 		warehouse.Name = input.Name
 	}
@@ -135,11 +158,23 @@ func (s *WarehouseService) Update(ctx context.Context, id int64, input *UpdateWa
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update warehouse")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(warehouse)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "warehouses",
+			RecordID:   warehouse.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: warehouse.UpdatedBy,
+		})
+	}
+
 	return warehouse, nil
 }
 
 func (s *WarehouseService) Delete(ctx context.Context, id int64) error {
-	_, err := s.warehouseRepo.GetByID(ctx, id)
+	warehouse, err := s.warehouseRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "warehouse not found")
 	}
@@ -147,6 +182,17 @@ func (s *WarehouseService) Delete(ctx context.Context, id int64) error {
 	err = s.warehouseRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete warehouse")
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(warehouse)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "warehouses",
+			RecordID:   warehouse.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: warehouse.UpdatedBy,
+		})
 	}
 
 	return nil
