@@ -95,53 +95,71 @@ export function AuditLogList() {
     }
   ]
 
-  const renderJsonView = (value: Record<string, unknown> | null | undefined) => {
+  const parseValue = (value: Record<string, unknown> | null | undefined): Record<string, unknown> => {
     if (!value || Object.keys(value).length === 0) {
-      return <span style={{ color: token.colorTextSecondary }}>无</span>
+      return {}
     }
-    
     try {
       const dataStr = value.data as string
       if (dataStr) {
-        const parsed = JSON.parse(dataStr)
-        return (
-          <div style={{ 
-            background: token.colorBgContainer, 
-            border: `1px solid ${token.colorBorder}`,
-            padding: 8, 
-            borderRadius: 4, 
-            maxHeight: 200, 
-            overflow: 'auto',
-            fontSize: 12,
-            wordBreak: 'break-all'
-          }}>
-            {Object.entries(parsed).map(([key, val]) => (
-              <div key={key} style={{ marginBottom: 4 }}>
-                <span style={{ fontWeight: 500, color: token.colorPrimary }}>{key}: </span>
-                <span style={{ color: token.colorText }}>{String(val)}</span>
-              </div>
-            ))}
-          </div>
-        )
+        return JSON.parse(dataStr)
       }
     } catch {
-      return <span style={{ color: token.colorTextSecondary }}>解析失败</span>
+      return {}
     }
+    return value
+  }
+
+  const renderValueComparison = (oldValue: Record<string, unknown> | null | undefined, newValue: Record<string, unknown> | null | undefined) => {
+    const oldData = parseValue(oldValue)
+    const newData = parseValue(newValue)
     
+    const allKeys = [...new Set([...Object.keys(oldData), ...Object.keys(newData)])]
+    
+    if (allKeys.length === 0) {
+      return <span style={{ color: token.colorTextSecondary }}>无数据</span>
+    }
+
+    const dataSource = allKeys.map((key, index) => {
+      const oldVal = oldData[key]
+      const newVal = newData[key]
+      const isDifferent = JSON.stringify(oldVal) !== JSON.stringify(newVal)
+      
+      return {
+        key: index + 1,
+        field: key,
+        oldValue: oldVal !== undefined ? String(oldVal) : '-',
+        newValue: newVal !== undefined ? String(newVal) : '-',
+        isDifferent
+      }
+    })
+
     return (
-      <div style={{ 
-        background: token.colorBgContainer, 
-        border: `1px solid ${token.colorBorder}`,
-        padding: 8, 
-        borderRadius: 4, 
-        maxHeight: 200, 
-        overflow: 'auto',
-        fontSize: 12,
-        wordBreak: 'break-all',
-        color: token.colorText
-      }}>
-        {JSON.stringify(value)}
-      </div>
+      <Table 
+        dataSource={dataSource}
+        pagination={false}
+        size="small"
+        rowKey="key"
+      >
+        <Table.Column title="No" dataIndex="key" width={50} />
+        <Table.Column title="字段" dataIndex="field" width={120} />
+        <Table.Column 
+          title="旧值" 
+          dataIndex="oldValue" 
+          ellipsis
+          render={(val: string) => <span style={{ color: token.colorTextSecondary }}>{val}</span>}
+        />
+        <Table.Column 
+          title="新值" 
+          dataIndex="newValue" 
+          ellipsis
+          render={(val: string, record: { isDifferent: boolean }) => (
+            <span style={{ fontWeight: record.isDifferent ? 600 : 400, color: token.colorText }}>
+              {val}
+            </span>
+          )}
+        />
+      </Table>
     )
   }
 
@@ -191,30 +209,27 @@ export function AuditLogList() {
         open={detailOpen}
         onCancel={() => setDetailOpen(false)}
         footer={null}
-        width={600}
+        width={700}
       >
         {selectedLog && (
-          <Descriptions column={2} size="small" bordered labelStyle={{ width: 100 }}>
-            <Descriptions.Item label="ID">{selectedLog.id}</Descriptions.Item>
-            <Descriptions.Item label="表名">{selectedLog.table_name}</Descriptions.Item>
-            <Descriptions.Item label="记录ID">{selectedLog.record_id}</Descriptions.Item>
-            <Descriptions.Item label="操作">
-              <Tag color={actionColors[selectedLog.action] || 'default'}>
-                {actionLabels[selectedLog.action] || selectedLog.action}
-              </Tag>
-            </Descriptions.Item>
-            <Descriptions.Item label="操作人ID">{selectedLog.operated_by}</Descriptions.Item>
-            <Descriptions.Item label="IP地址">{selectedLog.ip_address || '-'}</Descriptions.Item>
-            <Descriptions.Item label="操作时间" span={2}>
-              {dayjs(selectedLog.operated_at).format('YYYY-MM-DD HH:mm:ss')}
-            </Descriptions.Item>
-            <Descriptions.Item label="旧值" span={2}>
-              {renderJsonView(selectedLog.old_value)}
-            </Descriptions.Item>
-            <Descriptions.Item label="新值" span={2}>
-              {renderJsonView(selectedLog.new_value)}
-            </Descriptions.Item>
-          </Descriptions>
+          <>
+            <Descriptions column={2} size="small" bordered labelStyle={{ width: 100 }} style={{ marginBottom: 16 }}>
+              <Descriptions.Item label="ID">{selectedLog.id}</Descriptions.Item>
+              <Descriptions.Item label="表名">{selectedLog.table_name}</Descriptions.Item>
+              <Descriptions.Item label="记录ID">{selectedLog.record_id}</Descriptions.Item>
+              <Descriptions.Item label="操作">
+                <Tag color={actionColors[selectedLog.action] || 'default'}>
+                  {actionLabels[selectedLog.action] || selectedLog.action}
+                </Tag>
+              </Descriptions.Item>
+              <Descriptions.Item label="操作人ID">{selectedLog.operated_by}</Descriptions.Item>
+              <Descriptions.Item label="IP地址">{selectedLog.ip_address || '-'}</Descriptions.Item>
+              <Descriptions.Item label="操作时间" span={2}>
+                {dayjs(selectedLog.operated_at).format('YYYY-MM-DD HH:mm:ss')}
+              </Descriptions.Item>
+            </Descriptions>
+            {renderValueComparison(selectedLog.old_value, selectedLog.new_value)}
+          </>
         )}
       </Modal>
     </>
