@@ -98,7 +98,7 @@ export function RoleList() {
     try {
       setSelectedRoleId(roleId)
       const perms = await roleApi.getPermissions(roleId)
-      setTargetKeys(perms.map(p => p.id))
+      setTargetKeys(perms ? perms.map(p => p.id) : [])
       setPermModalOpen(true)
     } catch (error) {
       console.error('Failed to get role permissions:', error)

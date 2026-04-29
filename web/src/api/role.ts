@@ -29,8 +29,8 @@ export const roleApi = {
     await api.delete(`/roles/${id}`)
   },
 
-  getPermissions: async (id: number): Promise<Permission[]> => {
-    const response = await api.get<Permission[]>(`/roles/${id}/permissions`)
+  getPermissions: async (id: number): Promise<Permission[] | null> => {
+    const response = await api.get<Permission[] | null>(`/roles/${id}/permissions`)
     return response.data
   },
 
