@@ -140,7 +140,7 @@ export function AuditLogList() {
         pagination={false}
         size="small"
         rowKey="key"
-        scroll={{ y: 150 }}
+        scroll={{ y: 200 }}
       >
         <Table.Column title="No" dataIndex="key" width={50} />
         <Table.Column title="字段" dataIndex="field" width={120} />
