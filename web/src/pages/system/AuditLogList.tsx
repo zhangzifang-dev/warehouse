@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Input, DatePicker, Space, Modal, Descriptions, Tag } from 'antd'
+import { Table, Input, DatePicker, Space, Modal, Descriptions, Tag, theme } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { auditLogApi, type AuditLogFilter } from '../../api/auditLog'
 import type { AuditLog } from '../../types/system'
@@ -13,6 +13,7 @@ export function AuditLogList() {
   const [filter, setFilter] = useState<AuditLogFilter>({})
   const [detailOpen, setDetailOpen] = useState(false)
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null)
+  const { token } = theme.useToken()
 
   const { data, isLoading } = useQuery({
     queryKey: ['auditLogs', page, pageSize, filter],
@@ -96,7 +97,7 @@ export function AuditLogList() {
 
   const renderJsonView = (value: Record<string, unknown> | null | undefined) => {
     if (!value || Object.keys(value).length === 0) {
-      return <span style={{ color: '#999' }}>无</span>
+      return <span style={{ color: token.colorTextSecondary }}>无</span>
     }
     
     try {
@@ -105,7 +106,8 @@ export function AuditLogList() {
         const parsed = JSON.parse(dataStr)
         return (
           <div style={{ 
-            background: '#f5f5f5', 
+            background: token.colorBgContainer, 
+            border: `1px solid ${token.colorBorder}`,
             padding: 8, 
             borderRadius: 4, 
             maxHeight: 200, 
@@ -115,26 +117,28 @@ export function AuditLogList() {
           }}>
             {Object.entries(parsed).map(([key, val]) => (
               <div key={key} style={{ marginBottom: 4 }}>
-                <span style={{ fontWeight: 500, color: '#1890ff' }}>{key}: </span>
-                <span>{String(val)}</span>
+                <span style={{ fontWeight: 500, color: token.colorPrimary }}>{key}: </span>
+                <span style={{ color: token.colorText }}>{String(val)}</span>
               </div>
             ))}
           </div>
         )
       }
     } catch {
-      return <span style={{ color: '#999' }}>解析失败</span>
+      return <span style={{ color: token.colorTextSecondary }}>解析失败</span>
     }
     
     return (
       <div style={{ 
-        background: '#f5f5f5', 
+        background: token.colorBgContainer, 
+        border: `1px solid ${token.colorBorder}`,
         padding: 8, 
         borderRadius: 4, 
         maxHeight: 200, 
         overflow: 'auto',
         fontSize: 12,
-        wordBreak: 'break-all'
+        wordBreak: 'break-all',
+        color: token.colorText
       }}>
         {JSON.stringify(value)}
       </div>
