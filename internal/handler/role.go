@@ -25,7 +25,7 @@ type UpdateRoleRequest struct {
 }
 
 type RoleListResponse struct {
-	Roles []model.Role `json:"roles"`
+	Items []model.Role `json:"items"`
 	Total int          `json:"total"`
 	Page  int          `json:"page"`
 	Size  int          `json:"size"`
@@ -62,7 +62,7 @@ func (h *RoleHandler) List(c *gin.Context) {
 	}
 
 	response.Success(c, RoleListResponse{
-		Roles: roles,
+		Items: roles,
 		Total: total,
 		Page:  page,
 		Size:  pageSize,

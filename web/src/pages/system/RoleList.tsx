@@ -95,10 +95,15 @@ export function RoleList() {
   }
 
   const handleOpenPermModal = async (roleId: number) => {
-    setSelectedRoleId(roleId)
-    const perms = await roleApi.getPermissions(roleId)
-    setTargetKeys(perms.map(p => p.id))
-    setPermModalOpen(true)
+    try {
+      setSelectedRoleId(roleId)
+      const perms = await roleApi.getPermissions(roleId)
+      setTargetKeys(perms.map(p => p.id))
+      setPermModalOpen(true)
+    } catch (error) {
+      console.error('Failed to get role permissions:', error)
+      messageApi.error('获取权限失败')
+    }
   }
 
   const handleAssignPermissions = () => {
