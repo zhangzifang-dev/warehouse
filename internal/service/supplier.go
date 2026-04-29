@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -18,11 +19,13 @@ type SupplierRepository interface {
 
 type SupplierService struct {
 	supplierRepo SupplierRepository
+	auditLogger  AuditLogger
 }
 
-func NewSupplierService(supplierRepo SupplierRepository) *SupplierService {
+func NewSupplierService(supplierRepo SupplierRepository, auditLogger AuditLogger) *SupplierService {
 	return &SupplierService{
 		supplierRepo: supplierRepo,
+		auditLogger:  auditLogger,
 	}
 }
 
@@ -82,6 +85,17 @@ func (s *SupplierService) Create(ctx context.Context, input *CreateSupplierInput
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create supplier")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(supplier)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "suppliers",
+			RecordID:   supplier.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: supplier.CreatedBy,
+		})
+	}
+
 	return supplier, nil
 }
 
@@ -121,6 +135,11 @@ func (s *SupplierService) Update(ctx context.Context, id int64, input *UpdateSup
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "supplier not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(supplier)
+	}
+
 	if input.Code != nil && *input.Code != supplier.Code {
 		if *input.Code != "" {
 			existing, err := s.supplierRepo.GetByCode(ctx, *input.Code)
@@ -155,11 +174,23 @@ func (s *SupplierService) Update(ctx context.Context, id int64, input *UpdateSup
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update supplier")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(supplier)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "suppliers",
+			RecordID:   supplier.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: supplier.UpdatedBy,
+		})
+	}
+
 	return supplier, nil
 }
 
 func (s *SupplierService) Delete(ctx context.Context, id int64) error {
-	_, err := s.supplierRepo.GetByID(ctx, id)
+	supplier, err := s.supplierRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "supplier not found")
 	}
@@ -167,6 +198,17 @@ func (s *SupplierService) Delete(ctx context.Context, id int64) error {
 	err = s.supplierRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete supplier")
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(supplier)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "suppliers",
+			RecordID:   supplier.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: supplier.UpdatedBy,
+		})
 	}
 
 	return nil

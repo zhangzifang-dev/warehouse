@@ -77,7 +77,7 @@ func TestUserService_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 	input := &CreateUserInput{
 		Username: "testuser",
 		Password: "password123",
@@ -109,7 +109,7 @@ func TestUserService_Create_DefaultStatus(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 	input := &CreateUserInput{
 		Username: "testuser",
 		Password: "password123",
@@ -132,7 +132,7 @@ func TestUserService_Create_DuplicateUsername(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 	input := &CreateUserInput{
 		Username: "existinguser",
 		Password: "password123",
@@ -156,7 +156,7 @@ func TestUserService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 
 	user, err := svc.GetByID(context.Background(), 1)
 
@@ -178,7 +178,7 @@ func TestUserService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -197,7 +197,7 @@ func TestUserService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 
 	result, err := svc.List(context.Background(), 1, 10)
 
@@ -225,7 +225,7 @@ func TestUserService_List_DefaultPagination(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 
 	_, err := svc.List(context.Background(), 0, 0)
 
@@ -244,7 +244,7 @@ func TestUserService_List_MaxPageSize(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 
 	_, err := svc.List(context.Background(), 1, 200)
 
@@ -269,7 +269,7 @@ func TestUserService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 	input := &UpdateUserInput{
 		Nickname: "New Nickname",
 		Email:    "new@example.com",
@@ -300,7 +300,7 @@ func TestUserService_Update_Status(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 	input := &UpdateUserInput{
 		Status: &newStatus,
 	}
@@ -322,7 +322,7 @@ func TestUserService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 	input := &UpdateUserInput{Nickname: "New Name"}
 
 	_, err := svc.Update(context.Background(), 999, input)
@@ -342,7 +342,7 @@ func TestUserService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -358,7 +358,7 @@ func TestUserService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 999)
 
@@ -380,7 +380,7 @@ func TestUserService_GetUserRoles_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 
 	roles, err := svc.GetUserRoles(context.Background(), 1)
 
@@ -399,7 +399,7 @@ func TestUserService_GetUserRoles_UserNotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewUserService(mockRepo)
+	svc := NewUserService(mockRepo, nil)
 
 	_, err := svc.GetUserRoles(context.Background(), 999)
 

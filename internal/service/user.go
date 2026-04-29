@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -19,12 +20,14 @@ type UserFullRepository interface {
 }
 
 type UserService struct {
-	userRepo UserFullRepository
+	userRepo    UserFullRepository
+	auditLogger AuditLogger
 }
 
-func NewUserService(userRepo UserFullRepository) *UserService {
+func NewUserService(userRepo UserFullRepository, auditLogger AuditLogger) *UserService {
 	return &UserService{
-		userRepo: userRepo,
+		userRepo:    userRepo,
+		auditLogger: auditLogger,
 	}
 }
 
@@ -56,6 +59,17 @@ func (s *UserService) Create(ctx context.Context, input *CreateUserInput) (*mode
 			return nil, apperrors.NewAppError(apperrors.CodeDuplicateEntry, "username already exists")
 		}
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create user")
+	}
+
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(user)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "users",
+			RecordID:   user.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: user.CreatedBy,
+		})
 	}
 
 	return user, nil
@@ -106,6 +120,11 @@ func (s *UserService) Update(ctx context.Context, id int64, input *UpdateUserInp
 		return nil, apperrors.NewAppError(apperrors.CodeUserNotFound, "user not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(user)
+	}
+
 	if input.Status != nil {
 		user.Status = *input.Status
 	}
@@ -115,11 +134,23 @@ func (s *UserService) Update(ctx context.Context, id int64, input *UpdateUserInp
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update user")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(user)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "users",
+			RecordID:   user.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: user.UpdatedBy,
+		})
+	}
+
 	return user, nil
 }
 
 func (s *UserService) Delete(ctx context.Context, id int64) error {
-	_, err := s.userRepo.GetByID(ctx, id)
+	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeUserNotFound, "user not found")
 	}
@@ -127,6 +158,17 @@ func (s *UserService) Delete(ctx context.Context, id int64) error {
 	err = s.userRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete user")
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(user)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "users",
+			RecordID:   user.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: user.UpdatedBy,
+		})
 	}
 
 	return nil

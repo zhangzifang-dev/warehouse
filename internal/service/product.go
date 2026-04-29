@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -18,11 +19,13 @@ type ProductRepository interface {
 
 type ProductService struct {
 	productRepo ProductRepository
+	auditLogger AuditLogger
 }
 
-func NewProductService(productRepo ProductRepository) *ProductService {
+func NewProductService(productRepo ProductRepository, auditLogger AuditLogger) *ProductService {
 	return &ProductService{
 		productRepo: productRepo,
+		auditLogger: auditLogger,
 	}
 }
 
@@ -89,6 +92,17 @@ func (s *ProductService) Create(ctx context.Context, input *CreateProductInput) 
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create product")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(product)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "products",
+			RecordID:   product.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: product.CreatedBy,
+		})
+	}
+
 	return product, nil
 }
 
@@ -126,6 +140,11 @@ func (s *ProductService) Update(ctx context.Context, id int64, input *UpdateProd
 	product, err := s.productRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "product not found")
+	}
+
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(product)
 	}
 
 	if input.SKU != nil && *input.SKU != product.SKU {
@@ -166,11 +185,23 @@ func (s *ProductService) Update(ctx context.Context, id int64, input *UpdateProd
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update product")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(product)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "products",
+			RecordID:   product.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: product.UpdatedBy,
+		})
+	}
+
 	return product, nil
 }
 
 func (s *ProductService) Delete(ctx context.Context, id int64) error {
-	_, err := s.productRepo.GetByID(ctx, id)
+	product, err := s.productRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "product not found")
 	}
@@ -178,6 +209,17 @@ func (s *ProductService) Delete(ctx context.Context, id int64) error {
 	err = s.productRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete product")
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(product)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "products",
+			RecordID:   product.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: product.UpdatedBy,
+		})
 	}
 
 	return nil

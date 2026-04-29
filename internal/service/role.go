@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 )
@@ -18,12 +19,14 @@ type RoleRepository interface {
 }
 
 type RoleService struct {
-	roleRepo RoleRepository
+	roleRepo    RoleRepository
+	auditLogger AuditLogger
 }
 
-func NewRoleService(roleRepo RoleRepository) *RoleService {
+func NewRoleService(roleRepo RoleRepository, auditLogger AuditLogger) *RoleService {
 	return &RoleService{
-		roleRepo: roleRepo,
+		roleRepo:    roleRepo,
+		auditLogger: auditLogger,
 	}
 }
 
@@ -32,6 +35,18 @@ func (s *RoleService) Create(ctx context.Context, role *model.Role) (*model.Role
 	if err != nil {
 		return nil, err
 	}
+
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(role)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "roles",
+			RecordID:   role.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: role.CreatedBy,
+		})
+	}
+
 	return role, nil
 }
 
@@ -52,6 +67,12 @@ func (s *RoleService) Update(ctx context.Context, id int64, role *model.Role) (*
 	if err != nil {
 		return nil, err
 	}
+
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(existing)
+	}
+
 	if role.Name != "" {
 		existing.Name = role.Name
 	}
@@ -65,11 +86,45 @@ func (s *RoleService) Update(ctx context.Context, id int64, role *model.Role) (*
 	if err != nil {
 		return nil, err
 	}
+
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(existing)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "roles",
+			RecordID:   existing.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: existing.UpdatedBy,
+		})
+	}
+
 	return existing, nil
 }
 
 func (s *RoleService) Delete(ctx context.Context, id int64) error {
-	return s.roleRepo.Delete(ctx, id)
+	role, err := s.roleRepo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	err = s.roleRepo.Delete(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(role)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "roles",
+			RecordID:   role.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: role.UpdatedBy,
+		})
+	}
+
+	return nil
 }
 
 func (s *RoleService) AssignPermissions(ctx context.Context, roleID int64, permissionIDs []int64) error {

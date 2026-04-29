@@ -72,7 +72,7 @@ func TestProductService_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 	input := &CreateProductInput{
 		SKU:  "SKU001",
 		Name: "Test Product",
@@ -98,7 +98,7 @@ func TestProductService_Create_Success(t *testing.T) {
 func TestProductService_Create_EmptySKU(t *testing.T) {
 	mockRepo := &mockProductRepository{}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 	input := &CreateProductInput{
 		SKU:  "",
 		Name: "Test Product",
@@ -114,7 +114,7 @@ func TestProductService_Create_EmptySKU(t *testing.T) {
 func TestProductService_Create_EmptyName(t *testing.T) {
 	mockRepo := &mockProductRepository{}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 	input := &CreateProductInput{
 		SKU:  "SKU001",
 		Name: "",
@@ -134,7 +134,7 @@ func TestProductService_Create_DuplicateSKU(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 	input := &CreateProductInput{
 		SKU:  "SKU001",
 		Name: "Test Product",
@@ -157,7 +157,7 @@ func TestProductService_Create_DefaultStatus(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 	input := &CreateProductInput{
 		SKU:  "SKU001",
 		Name: "Test Product",
@@ -184,7 +184,7 @@ func TestProductService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 
 	product, err := svc.GetByID(context.Background(), 1)
 
@@ -206,7 +206,7 @@ func TestProductService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -225,7 +225,7 @@ func TestProductService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 
 	result, err := svc.List(context.Background(), 1, 10, 0, "")
 
@@ -252,7 +252,7 @@ func TestProductService_List_WithCategoryID(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 
 	_, err := svc.List(context.Background(), 1, 10, 5, "")
 
@@ -273,7 +273,7 @@ func TestProductService_List_WithKeyword(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 
 	_, err := svc.List(context.Background(), 1, 10, 0, "test")
 
@@ -295,7 +295,7 @@ func TestProductService_List_DefaultPagination(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 
 	_, err := svc.List(context.Background(), 0, 0, 0, "")
 
@@ -323,7 +323,7 @@ func TestProductService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 	input := &UpdateProductInput{
 		Name:  productStrPtr("Updated Product"),
 		Price: productFloatPtr(199.99),
@@ -359,7 +359,7 @@ func TestProductService_Update_DuplicateSKU(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 	input := &UpdateProductInput{
 		SKU: productStrPtr("SKU002"),
 	}
@@ -388,7 +388,7 @@ func TestProductService_Update_SameSKU(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 	input := &UpdateProductInput{
 		SKU: productStrPtr("SKU001"),
 	}
@@ -407,7 +407,7 @@ func TestProductService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 	input := &UpdateProductInput{Name: productStrPtr("Updated")}
 
 	_, err := svc.Update(context.Background(), 999, input)
@@ -427,7 +427,7 @@ func TestProductService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -443,7 +443,7 @@ func TestProductService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewProductService(mockRepo)
+	svc := NewProductService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 999)
 

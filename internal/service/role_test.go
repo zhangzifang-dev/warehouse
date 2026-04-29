@@ -83,7 +83,7 @@ func TestRoleService_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	role := &model.Role{
 		Name:        "Admin",
@@ -109,7 +109,7 @@ func TestRoleService_Create_DuplicateCode(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	role := &model.Role{
 		Name: "Admin",
@@ -136,7 +136,7 @@ func TestRoleService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	role, err := svc.GetByID(context.Background(), 1)
 
@@ -158,7 +158,7 @@ func TestRoleService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -179,7 +179,7 @@ func TestRoleService_GetByCode_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	role, err := svc.GetByCode(context.Background(), "admin")
 
@@ -201,7 +201,7 @@ func TestRoleService_GetByCode_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	_, err := svc.GetByCode(context.Background(), "nonexistent")
 
@@ -220,7 +220,7 @@ func TestRoleService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	roles, total, err := svc.List(context.Background(), 1, 10)
 
@@ -251,7 +251,7 @@ func TestRoleService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	role := &model.Role{
 		Name:        "Admin Updated",
@@ -275,7 +275,7 @@ func TestRoleService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	role := &model.Role{
 		Name: "Admin",
@@ -290,12 +290,19 @@ func TestRoleService_Update_NotFound(t *testing.T) {
 
 func TestRoleService_Delete_Success(t *testing.T) {
 	mockRepo := &mockRoleRepository{
+		getByIDFunc: func(ctx context.Context, id int64) (*model.Role, error) {
+			return &model.Role{
+				BaseModel: model.BaseModel{ID: id},
+				Name:      "Admin",
+				Code:      "admin",
+			}, nil
+		},
 		deleteFunc: func(ctx context.Context, id int64) error {
 			return nil
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -306,12 +313,12 @@ func TestRoleService_Delete_Success(t *testing.T) {
 
 func TestRoleService_Delete_NotFound(t *testing.T) {
 	mockRepo := &mockRoleRepository{
-		deleteFunc: func(ctx context.Context, id int64) error {
-			return errors.New("record not found")
+		getByIDFunc: func(ctx context.Context, id int64) (*model.Role, error) {
+			return nil, errors.New("record not found")
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 999)
 
@@ -327,7 +334,7 @@ func TestRoleService_AssignPermissions_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	err := svc.AssignPermissions(context.Background(), 1, []int64{1, 2, 3})
 
@@ -346,7 +353,7 @@ func TestRoleService_GetRolePermissions_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	permissions, err := svc.GetRolePermissions(context.Background(), 1)
 
@@ -365,7 +372,7 @@ func TestRoleService_GetRolePermissions_Empty(t *testing.T) {
 		},
 	}
 
-	svc := NewRoleService(mockRepo)
+	svc := NewRoleService(mockRepo, nil)
 
 	permissions, err := svc.GetRolePermissions(context.Background(), 1)
 

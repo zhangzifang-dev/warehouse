@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -18,11 +19,13 @@ type CustomerRepository interface {
 
 type CustomerService struct {
 	customerRepo CustomerRepository
+	auditLogger  AuditLogger
 }
 
-func NewCustomerService(customerRepo CustomerRepository) *CustomerService {
+func NewCustomerService(customerRepo CustomerRepository, auditLogger AuditLogger) *CustomerService {
 	return &CustomerService{
 		customerRepo: customerRepo,
+		auditLogger:  auditLogger,
 	}
 }
 
@@ -82,6 +85,17 @@ func (s *CustomerService) Create(ctx context.Context, input *CreateCustomerInput
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create customer")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(customer)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "customers",
+			RecordID:   customer.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: customer.CreatedBy,
+		})
+	}
+
 	return customer, nil
 }
 
@@ -121,6 +135,11 @@ func (s *CustomerService) Update(ctx context.Context, id int64, input *UpdateCus
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "customer not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(customer)
+	}
+
 	if input.Code != nil && *input.Code != customer.Code {
 		if *input.Code != "" {
 			existing, err := s.customerRepo.GetByCode(ctx, *input.Code)
@@ -155,11 +174,23 @@ func (s *CustomerService) Update(ctx context.Context, id int64, input *UpdateCus
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update customer")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(customer)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "customers",
+			RecordID:   customer.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: customer.UpdatedBy,
+		})
+	}
+
 	return customer, nil
 }
 
 func (s *CustomerService) Delete(ctx context.Context, id int64) error {
-	_, err := s.customerRepo.GetByID(ctx, id)
+	customer, err := s.customerRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "customer not found")
 	}
@@ -167,6 +198,17 @@ func (s *CustomerService) Delete(ctx context.Context, id int64) error {
 	err = s.customerRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete customer")
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(customer)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "customers",
+			RecordID:   customer.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: customer.UpdatedBy,
+		})
 	}
 
 	return nil

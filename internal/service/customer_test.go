@@ -72,7 +72,7 @@ func TestCustomerService_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 	input := &CreateCustomerInput{
 		Name:    "Test Customer",
 		Code:    "CUS001",
@@ -96,7 +96,7 @@ func TestCustomerService_Create_Success(t *testing.T) {
 func TestCustomerService_Create_EmptyName(t *testing.T) {
 	mockRepo := &mockCustomerRepository{}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 	input := &CreateCustomerInput{
 		Name: "",
 	}
@@ -115,7 +115,7 @@ func TestCustomerService_Create_DuplicateCode(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 	input := &CreateCustomerInput{
 		Name: "Test Customer",
 		Code: "CUS001",
@@ -138,7 +138,7 @@ func TestCustomerService_Create_DefaultStatus(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 	input := &CreateCustomerInput{
 		Name: "Test Customer",
 	}
@@ -163,7 +163,7 @@ func TestCustomerService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 
 	customer, err := svc.GetByID(context.Background(), 1)
 
@@ -185,7 +185,7 @@ func TestCustomerService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -204,7 +204,7 @@ func TestCustomerService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 
 	result, err := svc.List(context.Background(), 1, 10, "")
 
@@ -228,7 +228,7 @@ func TestCustomerService_List_WithKeyword(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 
 	_, err := svc.List(context.Background(), 1, 10, "test")
 
@@ -253,7 +253,7 @@ func TestCustomerService_List_DefaultPagination(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 
 	_, err := svc.List(context.Background(), 0, 0, "")
 
@@ -281,7 +281,7 @@ func TestCustomerService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 	input := &UpdateCustomerInput{
 		Name: strPtrCustomer("New Name"),
 	}
@@ -315,7 +315,7 @@ func TestCustomerService_Update_Code(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 	input := &UpdateCustomerInput{
 		Code: strPtrCustomer("NEW"),
 	}
@@ -344,7 +344,7 @@ func TestCustomerService_Update_DuplicateCode(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 	input := &UpdateCustomerInput{
 		Code: strPtrCustomer("EXISTING"),
 	}
@@ -363,7 +363,7 @@ func TestCustomerService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 	input := &UpdateCustomerInput{Name: strPtrCustomer("Updated")}
 
 	_, err := svc.Update(context.Background(), 999, input)
@@ -383,7 +383,7 @@ func TestCustomerService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -399,7 +399,7 @@ func TestCustomerService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewCustomerService(mockRepo)
+	svc := NewCustomerService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 999)
 
