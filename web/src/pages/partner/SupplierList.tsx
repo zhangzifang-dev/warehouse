@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, Select, message, Popconfirm, Tag } from 'antd'
+import { Table, Button, Space, Modal, Form, Input, Select, message, Popconfirm, Tag, Row, Col } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supplierApi } from '../../api/supplier'
@@ -141,28 +141,47 @@ export function SupplierList() {
         onOk={handleSubmit}
         onCancel={handleCloseModal}
         confirmLoading={createMutation.isPending || updateMutation.isPending}
+        width={600}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="name" label="供应商名称" rules={[{ required: true, message: '请输入供应商名称' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="code" label="供应商编码">
-            <Input />
-          </Form.Item>
-          <Form.Item name="contact" label="联系人">
-            <Input />
-          </Form.Item>
-          <Form.Item name="phone" label="联系电话">
-            <Input />
-          </Form.Item>
-          <Form.Item name="email" label="邮箱">
-            <Input />
-          </Form.Item>
-          <Form.Item name="address" label="地址">
+        <Form form={form} layout="horizontal" labelCol={{ span: 6 }} wrapperCol={{ span: 18 }} style={{ marginTop: 16 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="name" label="供应商名称" rules={[{ required: true, message: '请输入供应商名称' }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="code" label="供应商编码">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="contact" label="联系人">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="phone" label="联系电话">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="email" label="邮箱">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="status" label="状态" initialValue={1}>
+                <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="address" label="地址" labelCol={{ span: 3 }} wrapperCol={{ span: 21 }}>
             <Input.TextArea rows={2} />
-          </Form.Item>
-          <Form.Item name="status" label="状态" initialValue={1}>
-            <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
           </Form.Item>
         </Form>
       </Modal>
