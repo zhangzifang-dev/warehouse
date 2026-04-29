@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Tag, TreeSelect } from 'antd'
+import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Tag, TreeSelect, Row, Col } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { productApi } from '../../api/product'
@@ -195,39 +195,63 @@ export function ProductList() {
         onOk={handleSubmit}
         onCancel={handleCloseModal}
         confirmLoading={createMutation.isPending || updateMutation.isPending}
-        width={600}
+        width={650}
       >
-        <Form form={form} layout="vertical">
-          <Form.Item name="sku" label="SKU" rules={[{ required: true, message: '请输入SKU' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="name" label="商品名称" rules={[{ required: true, message: '请输入商品名称' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="category_id" label="分类">
-            <TreeSelect
-              placeholder="选择分类"
-              treeData={categoryTreeData}
-              allowClear
-            />
-          </Form.Item>
-          <Form.Item name="specification" label="规格">
-            <Input />
-          </Form.Item>
-          <Form.Item name="unit" label="单位">
-            <Input />
-          </Form.Item>
-          <Form.Item name="barcode" label="条码">
-            <Input />
-          </Form.Item>
-          <Form.Item name="price" label="价格">
-            <InputNumber min={0} precision={2} style={{ width: '100%' }} />
-          </Form.Item>
-          <Form.Item name="description" label="描述">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-          <Form.Item name="status" label="状态" initialValue={1}>
-            <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
+        <Form form={form} layout="horizontal" labelCol={{ span: 6 }} wrapperCol={{ span: 18 }} style={{ marginTop: 16 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="sku" label="SKU" rules={[{ required: true, message: '请输入SKU' }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="name" label="商品名称" rules={[{ required: true, message: '请输入商品名称' }]}>
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="category_id" label="分类">
+                <TreeSelect
+                  placeholder="选择分类"
+                  treeData={categoryTreeData}
+                  allowClear
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="unit" label="单位">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="specification" label="规格">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="barcode" label="条码">
+                <Input />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="price" label="价格">
+                <InputNumber min={0} precision={2} style={{ width: '100%' }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="status" label="状态" initialValue={1}>
+                <Select options={[{ value: 1, label: '启用' }, { value: 0, label: '禁用' }]} />
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="description" label="描述" labelCol={{ span: 3 }} wrapperCol={{ span: 21 }}>
+            <Input.TextArea rows={2} />
           </Form.Item>
         </Form>
       </Modal>
