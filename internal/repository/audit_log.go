@@ -40,6 +40,7 @@ type AuditLogFilter struct {
 	TableName  string
 	RecordID   *int64
 	OperatedBy *int64
+	OperatedByName string
 	StartTime  *time.Time
 	EndTime    *time.Time
 	Page       int
@@ -61,7 +62,16 @@ func (r *AuditLogRepository) List(ctx context.Context, filter *AuditLogFilter) (
 		q = q.Where("audit_log.record_id = ?", *filter.RecordID)
 	}
 	if filter.OperatedBy != nil {
+	if filter.OperatedByName != "" {
+		q = q.Where("u.username LIKE ?", "%"+filter.OperatedByName+"%")
+	}
 		q = q.Where("audit_log.operated_by = ?", *filter.OperatedBy)
+	if filter.OperatedByName != "" {
+		q = q.Where("u.username LIKE ?", "%"+filter.OperatedByName+"%")
+	}
+	}
+	if filter.OperatedByName != "" {
+		q = q.Where("u.username LIKE ?", "%"+filter.OperatedByName+"%")
 	}
 	if filter.StartTime != nil {
 		q = q.Where("audit_log.operated_at >= ?", *filter.StartTime)

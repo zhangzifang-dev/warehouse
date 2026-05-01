@@ -6,6 +6,7 @@ export interface AuditLogFilter {
   table_name?: string
   record_id?: number
   operated_by?: number
+  operated_by_name?: string
   start_time?: string
   end_time?: string
 }

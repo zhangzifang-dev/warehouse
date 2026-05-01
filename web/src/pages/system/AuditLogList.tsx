@@ -36,6 +36,11 @@ export function AuditLogList() {
     setPage(1)
   }
 
+  const handleOperatedByNameChange = (value: string) => {
+    setFilter(prev => ({ ...prev, operated_by_name: value || undefined }))
+    setPage(1)
+  }
+
   const handleDateChange = (dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => {
     if (dates && dates[0] && dates[1]) {
       setFilter(prev => ({
@@ -173,6 +178,13 @@ export function AuditLogList() {
             style={{ width: 150 }}
             value={filter.table_name || ''}
             onChange={e => handleTableChange(e.target.value)}
+            allowClear
+          />
+          <Input
+            placeholder="用户名"
+            style={{ width: 150 }}
+            value={filter.operated_by_name || ''}
+            onChange={e => handleOperatedByNameChange(e.target.value)}
             allowClear
           />
           <Input
