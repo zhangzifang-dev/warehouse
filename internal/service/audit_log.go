@@ -52,11 +52,11 @@ func (s *AuditLogService) Log(ctx context.Context, input *CreateAuditLogInput) e
 }
 
 type AuditLogQueryFilter struct {
-	TableName       string
+	TableName       []string
 	RecordID        *int64
 	OperatedBy      *int64
-	OperatedByName  string
-	Action          string
+	OperatedByName  []string
+	Action          []string
 	StartTime       *time.Time
 	EndTime         *time.Time
 	Page            int

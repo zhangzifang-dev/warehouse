@@ -36,8 +36,8 @@ export function AuditLogList() {
     setDetailOpen(true)
   }
 
-  const handleTableChange = (value: string | undefined) => {
-    setFilter(prev => ({ ...prev, table_name: value }))
+  const handleTableChange = (value: string[]) => {
+    setFilter(prev => ({ ...prev, table_name: value?.length ? value : undefined }))
     setPage(1)
   }
 
@@ -47,13 +47,13 @@ export function AuditLogList() {
     setPage(1)
   }
 
-  const handleOperatedByNameChange = (value: string | undefined) => {
-    setFilter(prev => ({ ...prev, operated_by_name: value }))
+  const handleOperatedByNameChange = (value: string[]) => {
+    setFilter(prev => ({ ...prev, operated_by_name: value?.length ? value : undefined }))
     setPage(1)
   }
 
-  const handleActionChange = (value: string | undefined) => {
-    setFilter(prev => ({ ...prev, action: value }))
+  const handleActionChange = (value: string[]) => {
+    setFilter(prev => ({ ...prev, action: value?.length ? value : undefined }))
     setPage(1)
   }
 

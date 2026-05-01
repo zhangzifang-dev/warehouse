@@ -46,8 +46,8 @@ func (h *AuditLogHandler) List(c *gin.Context) {
 		PageSize: pageSize,
 	}
 
-	if tableName := c.Query("table_name"); tableName != "" {
-		filter.TableName = tableName
+	if tableNames := c.QueryArray("table_name"); len(tableNames) > 0 {
+		filter.TableName = tableNames
 	}
 
 	if recordIDStr := c.Query("record_id"); recordIDStr != "" {
@@ -62,12 +62,12 @@ func (h *AuditLogHandler) List(c *gin.Context) {
 		}
 	}
 
-	if operatedByName := c.Query("operated_by_name"); operatedByName != "" {
-		filter.OperatedByName = operatedByName
+	if operatedByNames := c.QueryArray("operated_by_name"); len(operatedByNames) > 0 {
+		filter.OperatedByName = operatedByNames
 	}
 
-	if action := c.Query("action"); action != "" {
-		filter.Action = action
+	if actions := c.QueryArray("action"); len(actions) > 0 {
+		filter.Action = actions
 	}
 
 	if startTimeStr := c.Query("start_time"); startTimeStr != "" {

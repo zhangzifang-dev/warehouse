@@ -37,11 +37,11 @@ func (r *AuditLogRepository) GetByID(ctx context.Context, id int64) (*model.Audi
 }
 
 type AuditLogFilter struct {
-	TableName      string
+	TableName      []string
 	RecordID       *int64
 	OperatedBy     *int64
-	OperatedByName string
-	Action         string
+	OperatedByName []string
+	Action         []string
 	StartTime      *time.Time
 	EndTime        *time.Time
 	Page           int
@@ -56,8 +56,8 @@ func (r *AuditLogRepository) List(ctx context.Context, filter *AuditLogFilter) (
 		ColumnExpr("u.username AS operated_by_name").
 		Join("LEFT JOIN users u ON u.id = audit_log.operated_by")
 
-	if filter.TableName != "" {
-		q = q.Where("audit_log.table_name = ?", filter.TableName)
+	if len(filter.TableName) > 0 {
+		q = q.Where("audit_log.table_name IN (?)", bun.In(filter.TableName))
 	}
 	if filter.RecordID != nil {
 		q = q.Where("audit_log.record_id = ?", *filter.RecordID)
@@ -65,11 +65,11 @@ func (r *AuditLogRepository) List(ctx context.Context, filter *AuditLogFilter) (
 	if filter.OperatedBy != nil {
 		q = q.Where("audit_log.operated_by = ?", *filter.OperatedBy)
 	}
-	if filter.OperatedByName != "" {
-		q = q.Where("u.username LIKE ?", "%"+filter.OperatedByName+"%")
+	if len(filter.OperatedByName) > 0 {
+		q = q.Where("u.username IN (?)", bun.In(filter.OperatedByName))
 	}
-	if filter.Action != "" {
-		q = q.Where("audit_log.action = ?", filter.Action)
+	if len(filter.Action) > 0 {
+		q = q.Where("audit_log.action IN (?)", bun.In(filter.Action))
 	}
 	if filter.StartTime != nil {
 		q = q.Where("audit_log.operated_at >= ?", *filter.StartTime)
