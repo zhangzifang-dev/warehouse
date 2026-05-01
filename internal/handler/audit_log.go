@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log"
 	"strconv"
 	"time"
 
@@ -74,6 +75,7 @@ func (h *AuditLogHandler) List(c *gin.Context) {
 
 	result, err := h.auditLogService.List(c.Request.Context(), filter)
 	if err != nil {
+		log.Printf("ERROR: failed to list audit logs: %v", err)
 		response.Error(c, apperrors.CodeInternalError, "failed to list audit logs")
 		return
 	}
@@ -93,13 +95,14 @@ func (h *AuditLogHandler) GetByID(c *gin.Context) {
 		return
 	}
 
-	log, err := h.auditLogService.GetByID(c.Request.Context(), id)
+	auditLog, err := h.auditLogService.GetByID(c.Request.Context(), id)
 	if err != nil {
+		log.Printf("ERROR: failed to get audit log: %v", err)
 		response.Error(c, apperrors.CodeNotFound, "audit log not found")
 		return
 	}
 
-	response.Success(c, log)
+	response.Success(c, auditLog)
 }
 
 func RegisterAuditLogRoutes(r *gin.RouterGroup, h *AuditLogHandler) {
