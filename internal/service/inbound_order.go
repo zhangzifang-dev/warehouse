@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -30,14 +31,16 @@ type InventoryServiceForInbound interface {
 type InboundOrderService struct {
 	orderRepo    InboundOrderRepository
 	itemRepo     InboundItemRepository
-	inventorySvc  InventoryServiceForInbound
+	inventorySvc InventoryServiceForInbound
+	auditLogger  AuditLogger
 }
 
-func NewInboundOrderService(orderRepo InboundOrderRepository, itemRepo InboundItemRepository, inventorySvc InventoryServiceForInbound) *InboundOrderService {
+func NewInboundOrderService(orderRepo InboundOrderRepository, itemRepo InboundItemRepository, inventorySvc InventoryServiceForInbound, auditLogger AuditLogger) *InboundOrderService {
 	return &InboundOrderService{
 		orderRepo:    orderRepo,
 		itemRepo:     itemRepo,
-		inventorySvc:  inventorySvc,
+		inventorySvc: inventorySvc,
+		auditLogger:  auditLogger,
 	}
 }
 
@@ -79,6 +82,18 @@ func (s *InboundOrderService) Create(ctx context.Context, input *CreateInboundOr
 	err := s.orderRepo.Create(ctx, order)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create inbound order")
+	}
+
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(order)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "inbound_orders",
+			RecordID:   order.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: order.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return order, nil
@@ -128,6 +143,11 @@ func (s *InboundOrderService) Update(ctx context.Context, id int64, input *Updat
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "inbound order not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(order)
+	}
+
 	if input.SupplierID != nil {
 		order.SupplierID = *input.SupplierID
 	}
@@ -149,11 +169,24 @@ func (s *InboundOrderService) Update(ctx context.Context, id int64, input *Updat
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update inbound order")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(order)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "inbound_orders",
+			RecordID:   order.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: order.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
+	}
+
 	return order, nil
 }
 
 func (s *InboundOrderService) Delete(ctx context.Context, id int64) error {
-	_, err := s.orderRepo.GetByID(ctx, id)
+	order, err := s.orderRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "inbound order not found")
 	}
@@ -161,6 +194,18 @@ func (s *InboundOrderService) Delete(ctx context.Context, id int64) error {
 	err = s.orderRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete inbound order")
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(order)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "inbound_orders",
+			RecordID:   order.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: order.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return nil
@@ -178,6 +223,11 @@ func (s *InboundOrderService) Confirm(ctx context.Context, id int64) (*model.Inb
 
 	if order.Status == 2 {
 		return nil, apperrors.NewAppError(apperrors.CodeBadRequest, "order already cancelled")
+	}
+
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(order)
 	}
 
 	if s.itemRepo != nil && s.inventorySvc != nil {
@@ -202,6 +252,19 @@ func (s *InboundOrderService) Confirm(ctx context.Context, id int64) (*model.Inb
 	err = s.orderRepo.Update(ctx, order)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update order status")
+	}
+
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(order)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "inbound_orders",
+			RecordID:   order.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: order.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return order, nil

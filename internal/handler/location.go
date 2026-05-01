@@ -8,6 +8,7 @@ import (
 	"warehouse/internal/pkg/response"
 	apperrors "warehouse/internal/pkg/errors"
 	"warehouse/internal/service"
+	"warehouse/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -73,7 +74,7 @@ func (h *LocationHandler) Create(c *gin.Context) {
 		input.Status = *req.Status
 	}
 
-	location, err := h.locationService.Create(c.Request.Context(), input)
+	location, err := h.locationService.Create(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), input)
 	if err != nil {
 		handleLocationError(c, err)
 		return
@@ -138,7 +139,7 @@ func (h *LocationHandler) Update(c *gin.Context) {
 		Status:   req.Status,
 	}
 
-	location, err := h.locationService.Update(c.Request.Context(), id, input)
+	location, err := h.locationService.Update(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id, input)
 	if err != nil {
 		handleLocationError(c, err)
 		return
@@ -154,7 +155,7 @@ func (h *LocationHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.locationService.Delete(c.Request.Context(), id)
+	err = h.locationService.Delete(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id)
 	if err != nil {
 		handleLocationError(c, err)
 		return

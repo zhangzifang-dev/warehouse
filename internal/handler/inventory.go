@@ -96,7 +96,7 @@ func (h *InventoryHandler) Create(c *gin.Context) {
 		input.BatchNo = *req.BatchNo
 	}
 
-	inventory, err := h.inventoryService.Create(c.Request.Context(), input)
+	inventory, err := h.inventoryService.Create(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), input)
 	if err != nil {
 		handleInventoryError(c, err)
 		return
@@ -162,7 +162,7 @@ func (h *InventoryHandler) Update(c *gin.Context) {
 		BatchNo:     req.BatchNo,
 	}
 
-	inventory, err := h.inventoryService.Update(c.Request.Context(), id, input)
+	inventory, err := h.inventoryService.Update(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id, input)
 	if err != nil {
 		handleInventoryError(c, err)
 		return
@@ -178,7 +178,7 @@ func (h *InventoryHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.inventoryService.Delete(c.Request.Context(), id)
+	err = h.inventoryService.Delete(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id)
 	if err != nil {
 		handleInventoryError(c, err)
 		return

@@ -90,6 +90,18 @@ func (s *InventoryService) Create(ctx context.Context, input *CreateInventoryInp
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create inventory")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(inventory)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "inventory",
+			RecordID:   inventory.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: inventory.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
+	}
+
 	return inventory, nil
 }
 
@@ -129,6 +141,11 @@ func (s *InventoryService) Update(ctx context.Context, id int64, input *UpdateIn
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "inventory not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(inventory)
+	}
+
 	if input.WarehouseID != nil {
 		inventory.WarehouseID = *input.WarehouseID
 	}
@@ -150,6 +167,19 @@ func (s *InventoryService) Update(ctx context.Context, id int64, input *UpdateIn
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update inventory")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(inventory)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "inventory",
+			RecordID:   inventory.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: inventory.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
+	}
+
 	return inventory, nil
 }
 
@@ -162,14 +192,30 @@ func (s *InventoryService) GetByWarehouseAndProduct(ctx context.Context, warehou
 }
 
 func (s *InventoryService) Delete(ctx context.Context, id int64) error {
-	_, err := s.inventoryRepo.GetByID(ctx, id)
+	inventory, err := s.inventoryRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "inventory not found")
+	}
+
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(inventory)
 	}
 
 	err = s.inventoryRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete inventory")
+	}
+
+	if s.auditLogger != nil {
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "inventory",
+			RecordID:   inventory.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: inventory.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return nil

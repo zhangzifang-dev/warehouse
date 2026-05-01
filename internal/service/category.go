@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -18,11 +19,13 @@ type CategoryRepository interface {
 
 type CategoryService struct {
 	categoryRepo CategoryRepository
+	auditLogger  AuditLogger
 }
 
-func NewCategoryService(categoryRepo CategoryRepository) *CategoryService {
+func NewCategoryService(categoryRepo CategoryRepository, auditLogger AuditLogger) *CategoryService {
 	return &CategoryService{
 		categoryRepo: categoryRepo,
+		auditLogger:  auditLogger,
 	}
 }
 
@@ -66,6 +69,18 @@ func (s *CategoryService) Create(ctx context.Context, input *CreateCategoryInput
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create category")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(category)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "categories",
+			RecordID:   category.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: category.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
+	}
+
 	return category, nil
 }
 
@@ -105,6 +120,11 @@ func (s *CategoryService) Update(ctx context.Context, id int64, input *UpdateCat
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "category not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(category)
+	}
+
 	if input.Name != nil {
 		category.Name = *input.Name
 	}
@@ -123,11 +143,24 @@ func (s *CategoryService) Update(ctx context.Context, id int64, input *UpdateCat
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update category")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(category)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "categories",
+			RecordID:   category.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: category.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
+	}
+
 	return category, nil
 }
 
 func (s *CategoryService) Delete(ctx context.Context, id int64) error {
-	_, err := s.categoryRepo.GetByID(ctx, id)
+	category, err := s.categoryRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "category not found")
 	}
@@ -143,6 +176,18 @@ func (s *CategoryService) Delete(ctx context.Context, id int64) error {
 	err = s.categoryRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete category")
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(category)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "categories",
+			RecordID:   category.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: category.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return nil

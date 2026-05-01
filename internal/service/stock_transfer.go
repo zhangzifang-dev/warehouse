@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -33,30 +34,32 @@ type StockTransferService struct {
 	transferRepo StockTransferRepository
 	itemRepo     StockTransferItemRepository
 	inventorySvc InventoryServiceForTransfer
+	auditLogger  AuditLogger
 }
 
-func NewStockTransferService(transferRepo StockTransferRepository, itemRepo StockTransferItemRepository, inventorySvc InventoryServiceForTransfer) *StockTransferService {
+func NewStockTransferService(transferRepo StockTransferRepository, itemRepo StockTransferItemRepository, inventorySvc InventoryServiceForTransfer, auditLogger AuditLogger) *StockTransferService {
 	return &StockTransferService{
 		transferRepo: transferRepo,
 		itemRepo:     itemRepo,
 		inventorySvc: inventorySvc,
+		auditLogger:  auditLogger,
 	}
 }
 
 type CreateStockTransferInput struct {
-	OrderNo         string
+	OrderNo           string
 	SourceWarehouseID int64
-	TargetWarehouseID   int64
-	TotalQty   float64
-	Remark          string
+	TargetWarehouseID int64
+	TotalQty          float64
+	Remark            string
 }
 
 type UpdateStockTransferInput struct {
 	SourceWarehouseID *int64
-	TargetWarehouseID   *int64
-	TotalQty   *float64
-	Status          *int
-	Remark          *string
+	TargetWarehouseID *int64
+	TotalQty          *float64
+	Status            *int
+	Remark            *string
 }
 
 type ListStockTransfersResult struct {
@@ -85,6 +88,18 @@ func (s *StockTransferService) Create(ctx context.Context, input *CreateStockTra
 	err := s.transferRepo.Create(ctx, transfer)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create stock transfer")
+	}
+
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(transfer)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "stock_transfers",
+			RecordID:   transfer.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: transfer.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return transfer, nil
@@ -134,6 +149,11 @@ func (s *StockTransferService) Update(ctx context.Context, id int64, input *Upda
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "stock transfer not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(transfer)
+	}
+
 	if input.SourceWarehouseID != nil {
 		transfer.SourceWarehouseID = *input.SourceWarehouseID
 	}
@@ -153,11 +173,24 @@ func (s *StockTransferService) Update(ctx context.Context, id int64, input *Upda
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update stock transfer")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(transfer)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "stock_transfers",
+			RecordID:   transfer.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: transfer.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
+	}
+
 	return transfer, nil
 }
 
 func (s *StockTransferService) Delete(ctx context.Context, id int64) error {
-	_, err := s.transferRepo.GetByID(ctx, id)
+	transfer, err := s.transferRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "stock transfer not found")
 	}
@@ -165,6 +198,18 @@ func (s *StockTransferService) Delete(ctx context.Context, id int64) error {
 	err = s.transferRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete stock transfer")
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(transfer)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "stock_transfers",
+			RecordID:   transfer.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: transfer.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return nil
@@ -182,6 +227,11 @@ func (s *StockTransferService) Confirm(ctx context.Context, id int64) (*model.St
 
 	if transfer.Status == 2 {
 		return nil, apperrors.NewAppError(apperrors.CodeBadRequest, "transfer already cancelled")
+	}
+
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(transfer)
 	}
 
 	if s.itemRepo != nil && s.inventorySvc != nil {
@@ -248,6 +298,19 @@ func (s *StockTransferService) Confirm(ctx context.Context, id int64) (*model.St
 	err = s.transferRepo.Update(ctx, transfer)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update transfer status")
+	}
+
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(transfer)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "stock_transfers",
+			RecordID:   transfer.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: transfer.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return transfer, nil

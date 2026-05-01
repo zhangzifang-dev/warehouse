@@ -8,6 +8,7 @@ import (
 	"warehouse/internal/pkg/response"
 	apperrors "warehouse/internal/pkg/errors"
 	"warehouse/internal/service"
+	"warehouse/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -69,7 +70,7 @@ func (h *StockTransferHandler) Create(c *gin.Context) {
 		Remark:          req.Remark,
 	}
 
-	transfer, err := h.stockTransferService.Create(c.Request.Context(), input)
+	transfer, err := h.stockTransferService.Create(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), input)
 	if err != nil {
 		handleStockTransferError(c, err)
 		return
@@ -140,7 +141,7 @@ func (h *StockTransferHandler) Update(c *gin.Context) {
 		Remark:          req.Remark,
 	}
 
-	transfer, err := h.stockTransferService.Update(c.Request.Context(), id, input)
+	transfer, err := h.stockTransferService.Update(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id, input)
 	if err != nil {
 		handleStockTransferError(c, err)
 		return
@@ -156,7 +157,7 @@ func (h *StockTransferHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.stockTransferService.Delete(c.Request.Context(), id)
+	err = h.stockTransferService.Delete(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id)
 	if err != nil {
 		handleStockTransferError(c, err)
 		return
@@ -172,7 +173,7 @@ func (h *StockTransferHandler) Confirm(c *gin.Context) {
 		return
 	}
 
-	transfer, err := h.stockTransferService.Confirm(c.Request.Context(), id)
+	transfer, err := h.stockTransferService.Confirm(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id)
 	if err != nil {
 		handleStockTransferError(c, err)
 		return

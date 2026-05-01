@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -19,12 +20,14 @@ type LocationRepository interface {
 type LocationService struct {
 	locationRepo  LocationRepository
 	warehouseRepo WarehouseRepository
+	auditLogger   AuditLogger
 }
 
-func NewLocationService(locationRepo LocationRepository, warehouseRepo WarehouseRepository) *LocationService {
+func NewLocationService(locationRepo LocationRepository, warehouseRepo WarehouseRepository, auditLogger AuditLogger) *LocationService {
 	return &LocationService{
 		locationRepo:  locationRepo,
 		warehouseRepo: warehouseRepo,
+		auditLogger:   auditLogger,
 	}
 }
 
@@ -85,6 +88,18 @@ func (s *LocationService) Create(ctx context.Context, input *CreateLocationInput
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create location")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(location)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "locations",
+			RecordID:   location.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: location.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
+	}
+
 	return location, nil
 }
 
@@ -124,6 +139,11 @@ func (s *LocationService) Update(ctx context.Context, id int64, input *UpdateLoc
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "location not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(location)
+	}
+
 	needCodeUpdate := false
 	if input.Zone != "" {
 		location.Zone = input.Zone
@@ -159,11 +179,24 @@ func (s *LocationService) Update(ctx context.Context, id int64, input *UpdateLoc
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update location")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(location)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "locations",
+			RecordID:   location.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: location.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
+	}
+
 	return location, nil
 }
 
 func (s *LocationService) Delete(ctx context.Context, id int64) error {
-	_, err := s.locationRepo.GetByID(ctx, id)
+	location, err := s.locationRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "location not found")
 	}
@@ -171,6 +204,18 @@ func (s *LocationService) Delete(ctx context.Context, id int64) error {
 	err = s.locationRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete location")
+	}
+
+	if s.auditLogger != nil {
+		oldValue, _ := json.Marshal(location)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "locations",
+			RecordID:   location.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: location.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return nil

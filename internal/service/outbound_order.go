@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -29,16 +30,18 @@ type InventoryServiceForOutbound interface {
 }
 
 type OutboundOrderService struct {
-	orderRepo     OutboundOrderRepository
-	itemRepo      OutboundItemRepository
-	inventorySvc   InventoryServiceForOutbound
+	orderRepo    OutboundOrderRepository
+	itemRepo     OutboundItemRepository
+	inventorySvc InventoryServiceForOutbound
+	auditLogger  AuditLogger
 }
 
-func NewOutboundOrderService(orderRepo OutboundOrderRepository, itemRepo OutboundItemRepository, inventorySvc InventoryServiceForOutbound) *OutboundOrderService {
+func NewOutboundOrderService(orderRepo OutboundOrderRepository, itemRepo OutboundItemRepository, inventorySvc InventoryServiceForOutbound, auditLogger AuditLogger) *OutboundOrderService {
 	return &OutboundOrderService{
 		orderRepo:    orderRepo,
 		itemRepo:     itemRepo,
-		inventorySvc:  inventorySvc,
+		inventorySvc: inventorySvc,
+		auditLogger:  auditLogger,
 	}
 }
 
@@ -80,6 +83,18 @@ func (s *OutboundOrderService) Create(ctx context.Context, input *CreateOutbound
 	err := s.orderRepo.Create(ctx, order)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to create outbound order")
+	}
+
+	if s.auditLogger != nil {
+		jsonBytes, _ := json.Marshal(order)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "outbound_orders",
+			RecordID:   order.ID,
+			Action:     "create",
+			NewValue:   map[string]any{"data": string(jsonBytes)},
+			OperatedBy: order.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return order, nil
@@ -129,6 +144,11 @@ func (s *OutboundOrderService) Update(ctx context.Context, id int64, input *Upda
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "outbound order not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(order)
+	}
+
 	if input.CustomerID != nil {
 		order.CustomerID = *input.CustomerID
 	}
@@ -150,18 +170,47 @@ func (s *OutboundOrderService) Update(ctx context.Context, id int64, input *Upda
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update outbound order")
 	}
 
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(order)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "outbound_orders",
+			RecordID:   order.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: order.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
+	}
+
 	return order, nil
 }
 
 func (s *OutboundOrderService) Delete(ctx context.Context, id int64) error {
-	_, err := s.orderRepo.GetByID(ctx, id)
+	order, err := s.orderRepo.GetByID(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeRecordNotFound, "outbound order not found")
+	}
+
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(order)
 	}
 
 	err = s.orderRepo.Delete(ctx, id)
 	if err != nil {
 		return apperrors.NewAppError(apperrors.CodeInternalError, "failed to delete outbound order")
+	}
+
+	if s.auditLogger != nil {
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "outbound_orders",
+			RecordID:   order.ID,
+			Action:     "delete",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			OperatedBy: order.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return nil
@@ -179,6 +228,11 @@ func (s *OutboundOrderService) Confirm(ctx context.Context, id int64) (*model.Ou
 
 	if order.Status == 2 {
 		return nil, apperrors.NewAppError(apperrors.CodeBadRequest, "order already cancelled")
+	}
+
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(order)
 	}
 
 	if s.itemRepo != nil && s.inventorySvc != nil {
@@ -219,6 +273,19 @@ func (s *OutboundOrderService) Confirm(ctx context.Context, id int64) (*model.Ou
 	err = s.orderRepo.Update(ctx, order)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to update order status")
+	}
+
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(order)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "outbound_orders",
+			RecordID:   order.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: order.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return order, nil

@@ -8,6 +8,7 @@ import (
 	"warehouse/internal/pkg/response"
 	apperrors "warehouse/internal/pkg/errors"
 	"warehouse/internal/service"
+	"warehouse/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -69,7 +70,7 @@ func (h *InboundOrderHandler) Create(c *gin.Context) {
 		Remark:        req.Remark,
 	}
 
-	order, err := h.inboundOrderService.Create(c.Request.Context(), input)
+	order, err := h.inboundOrderService.Create(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), input)
 	if err != nil {
 		handleInboundOrderError(c, err)
 		return
@@ -135,7 +136,7 @@ func (h *InboundOrderHandler) Update(c *gin.Context) {
 		Remark:        req.Remark,
 	}
 
-	order, err := h.inboundOrderService.Update(c.Request.Context(), id, input)
+	order, err := h.inboundOrderService.Update(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id, input)
 	if err != nil {
 		handleInboundOrderError(c, err)
 		return
@@ -151,7 +152,7 @@ func (h *InboundOrderHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.inboundOrderService.Delete(c.Request.Context(), id)
+	err = h.inboundOrderService.Delete(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id)
 	if err != nil {
 		handleInboundOrderError(c, err)
 		return
@@ -167,7 +168,7 @@ func (h *InboundOrderHandler) Confirm(c *gin.Context) {
 		return
 	}
 
-	order, err := h.inboundOrderService.Confirm(c.Request.Context(), id)
+	order, err := h.inboundOrderService.Confirm(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id)
 	if err != nil {
 		handleInboundOrderError(c, err)
 		return
