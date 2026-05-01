@@ -58,6 +58,7 @@ export interface AuditLog {
   old_value: Record<string, unknown>
   new_value: Record<string, unknown>
   operated_by: number
+  operated_by_name: string
   operated_at: string
   ip_address: string
 }

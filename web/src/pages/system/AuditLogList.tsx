@@ -78,7 +78,7 @@ export function AuditLogList() {
         </Tag>
       )
     },
-    { title: '操作人ID', dataIndex: 'operated_by', width: 100 },
+    { title: '操作人', dataIndex: 'operated_by_name', width: 100, render: (name: string, record: AuditLog) => name || record.operated_by },
     {
       title: '操作时间',
       dataIndex: 'operated_at',
@@ -223,7 +223,7 @@ export function AuditLogList() {
                   {actionLabels[selectedLog.action] || selectedLog.action}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="操作人ID">{selectedLog.operated_by}</Descriptions.Item>
+              <Descriptions.Item label="操作人">{selectedLog.operated_by_name || selectedLog.operated_by}</Descriptions.Item>
               <Descriptions.Item label="IP地址">{selectedLog.ip_address || '-'}</Descriptions.Item>
               <Descriptions.Item label="操作时间" span={2}>
                 {dayjs(selectedLog.operated_at).format('YYYY-MM-DD HH:mm:ss')}
