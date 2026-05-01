@@ -58,7 +58,7 @@ func main() {
 	locationService := service.NewLocationService(locationRepo, warehouseRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
 	productService := service.NewProductService(productRepo, auditLogService)
-	inventoryService := service.NewInventoryService(inventoryRepo)
+	inventoryService := service.NewInventoryService(inventoryRepo, auditLogService)
 	supplierService := service.NewSupplierService(supplierRepo, auditLogService)
 	customerService := service.NewCustomerService(customerRepo, auditLogService)
 	inboundOrderService := service.NewInboundOrderService(inboundOrderRepo, inboundItemRepo, inventoryService)

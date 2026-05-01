@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 
+	"warehouse/internal/middleware"
 	"warehouse/internal/model"
 	"warehouse/internal/pkg/response"
 	apperrors "warehouse/internal/pkg/errors"
@@ -198,7 +199,9 @@ func (h *InventoryHandler) AdjustQuantity(c *gin.Context) {
 		Quantity:    req.Quantity,
 	}
 
-	inventory, err := h.inventoryService.AdjustQuantity(c.Request.Context(), input)
+	ctx := service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c))
+	ctx = service.SetUserIDToContext(ctx, middleware.GetUserID(c))
+	inventory, err := h.inventoryService.AdjustQuantity(ctx, input)
 	if err != nil {
 		handleInventoryError(c, err)
 		return

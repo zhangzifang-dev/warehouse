@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -19,11 +20,13 @@ type InventoryRepository interface {
 
 type InventoryService struct {
 	inventoryRepo InventoryRepository
+	auditLogger   AuditLogger
 }
 
-func NewInventoryService(inventoryRepo InventoryRepository) *InventoryService {
+func NewInventoryService(inventoryRepo InventoryRepository, auditLogger AuditLogger) *InventoryService {
 	return &InventoryService{
 		inventoryRepo: inventoryRepo,
+		auditLogger:   auditLogger,
 	}
 }
 
@@ -182,6 +185,11 @@ func (s *InventoryService) AdjustQuantity(ctx context.Context, input *AdjustQuan
 		return nil, apperrors.NewAppError(apperrors.CodeRecordNotFound, "inventory not found")
 	}
 
+	var oldValue []byte
+	if s.auditLogger != nil {
+		oldValue, _ = json.Marshal(inventory)
+	}
+
 	newQuantity := inventory.Quantity + input.Quantity
 
 	if newQuantity < 0 {
@@ -193,6 +201,19 @@ func (s *InventoryService) AdjustQuantity(ctx context.Context, input *AdjustQuan
 	err = s.inventoryRepo.Update(ctx, inventory)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to adjust quantity")
+	}
+
+	if s.auditLogger != nil {
+		newValue, _ := json.Marshal(inventory)
+		s.auditLogger.Log(ctx, &CreateAuditLogInput{
+			TableName:  "inventory",
+			RecordID:   inventory.ID,
+			Action:     "update",
+			OldValue:   map[string]any{"data": string(oldValue)},
+			NewValue:   map[string]any{"data": string(newValue)},
+			OperatedBy: inventory.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
+		})
 	}
 
 	return inventory, nil
