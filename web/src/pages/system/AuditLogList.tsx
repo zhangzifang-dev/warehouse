@@ -190,6 +190,7 @@ export function AuditLogList() {
       <div style={{ marginBottom: 16 }}>
         <Space wrap>
           <Select
+            mode="multiple"
             placeholder="表名"
             style={{ width: 150 }}
             value={filter.table_name}
@@ -199,6 +200,7 @@ export function AuditLogList() {
             options={tableNames?.map(name => ({ value: name, label: name }))}
           />
           <Select
+            mode="multiple"
             placeholder="用户名"
             style={{ width: 150 }}
             value={filter.operated_by_name}
@@ -208,6 +210,7 @@ export function AuditLogList() {
             options={usersData?.items.map(user => ({ value: user.username, label: user.username }))}
           />
           <Select
+            mode="multiple"
             placeholder="操作"
             style={{ width: 120 }}
             value={filter.action}
