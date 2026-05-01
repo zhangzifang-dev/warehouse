@@ -89,3 +89,16 @@ func (r *AuditLogRepository) List(ctx context.Context, filter *AuditLogFilter) (
 
 	return logs, total, nil
 }
+
+func (r *AuditLogRepository) GetTableNames(ctx context.Context) ([]string, error) {
+	var tableNames []string
+	err := r.db.NewSelect().
+		Model((*model.AuditLog)(nil)).
+		ColumnExpr("DISTINCT table_name").
+		Order("table_name").
+		Scan(ctx, &tableNames)
+	if err != nil {
+		return nil, err
+	}
+	return tableNames, nil
+}

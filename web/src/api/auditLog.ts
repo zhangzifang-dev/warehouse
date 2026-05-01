@@ -23,5 +23,10 @@ export const auditLogApi = {
   get: async (id: number): Promise<AuditLog> => {
     const response = await api.get<AuditLog>(`/audit-logs/${id}`)
     return response.data
+  },
+
+  getTableNames: async (): Promise<string[]> => {
+    const response = await api.get<string[]>('/audit-logs/table-names')
+    return response.data
   }
 }

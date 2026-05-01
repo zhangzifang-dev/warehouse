@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Table, Input, DatePicker, Space, Modal, Descriptions, Tag, theme, Select } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { auditLogApi, type AuditLogFilter } from '../../api/auditLog'
+import { userApi } from '../../api/user'
 import type { AuditLog } from '../../types/system'
 import dayjs from 'dayjs'
 
@@ -20,13 +21,23 @@ export function AuditLogList() {
     queryFn: () => auditLogApi.list(page, pageSize, filter)
   })
 
+  const { data: tableNames } = useQuery({
+    queryKey: ['auditLogTableNames'],
+    queryFn: () => auditLogApi.getTableNames()
+  })
+
+  const { data: usersData } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => userApi.list(1, 1000)
+  })
+
   const handleViewDetail = (record: AuditLog) => {
     setSelectedLog(record)
     setDetailOpen(true)
   }
 
-  const handleTableChange = (tableName: string) => {
-    setFilter(prev => ({ ...prev, table_name: tableName || undefined }))
+  const handleTableChange = (value: string | undefined) => {
+    setFilter(prev => ({ ...prev, table_name: value }))
     setPage(1)
   }
 
@@ -36,8 +47,8 @@ export function AuditLogList() {
     setPage(1)
   }
 
-  const handleOperatedByNameChange = (value: string) => {
-    setFilter(prev => ({ ...prev, operated_by_name: value || undefined }))
+  const handleOperatedByNameChange = (value: string | undefined) => {
+    setFilter(prev => ({ ...prev, operated_by_name: value }))
     setPage(1)
   }
 
@@ -178,19 +189,23 @@ export function AuditLogList() {
     <>
       <div style={{ marginBottom: 16 }}>
         <Space wrap>
-          <Input
+          <Select
             placeholder="表名"
             style={{ width: 150 }}
-            value={filter.table_name || ''}
-            onChange={e => handleTableChange(e.target.value)}
+            value={filter.table_name}
+            onChange={handleTableChange}
             allowClear
+            showSearch
+            options={tableNames?.map(name => ({ value: name, label: name }))}
           />
-          <Input
+          <Select
             placeholder="用户名"
             style={{ width: 150 }}
-            value={filter.operated_by_name || ''}
-            onChange={e => handleOperatedByNameChange(e.target.value)}
+            value={filter.operated_by_name}
+            onChange={handleOperatedByNameChange}
             allowClear
+            showSearch
+            options={usersData?.items.map(user => ({ value: user.username, label: user.username }))}
           />
           <Select
             placeholder="操作"

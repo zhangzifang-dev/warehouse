@@ -12,6 +12,7 @@ type AuditLogFullRepository interface {
 	Create(ctx context.Context, log *model.AuditLog) error
 	GetByID(ctx context.Context, id int64) (*model.AuditLog, error)
 	List(ctx context.Context, filter *repository.AuditLogFilter) ([]model.AuditLog, int, error)
+	GetTableNames(ctx context.Context) ([]string, error)
 }
 
 type AuditLogService struct {
@@ -103,4 +104,8 @@ func (s *AuditLogService) List(ctx context.Context, filter *AuditLogQueryFilter)
 		Items: items,
 		Total: total,
 	}, nil
+}
+
+func (s *AuditLogService) GetTableNames(ctx context.Context) ([]string, error) {
+	return s.repo.GetTableNames(ctx)
 }

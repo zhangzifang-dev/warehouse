@@ -17,6 +17,7 @@ import (
 type AuditLogService interface {
 	GetByID(ctx context.Context, id int64) (*model.AuditLog, error)
 	List(ctx context.Context, filter *service.AuditLogQueryFilter) (*service.AuditLogListResult, error)
+	GetTableNames(ctx context.Context) ([]string, error)
 }
 
 type AuditLogHandler struct {
@@ -96,6 +97,16 @@ func (h *AuditLogHandler) List(c *gin.Context) {
 	})
 }
 
+func (h *AuditLogHandler) GetTableNames(c *gin.Context) {
+	tableNames, err := h.auditLogService.GetTableNames(c.Request.Context())
+	if err != nil {
+		response.Error(c, apperrors.CodeInternalError, "failed to get table names")
+		return
+	}
+
+	response.Success(c, tableNames)
+}
+
 func (h *AuditLogHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
@@ -117,6 +128,7 @@ func RegisterAuditLogRoutes(r *gin.RouterGroup, h *AuditLogHandler) {
 	auditLogs := r.Group("/audit-logs")
 	{
 		auditLogs.GET("", h.List)
+		auditLogs.GET("/table-names", h.GetTableNames)
 		auditLogs.GET("/:id", h.GetByID)
 	}
 }
