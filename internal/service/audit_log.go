@@ -44,7 +44,10 @@ func (s *AuditLogService) Log(ctx context.Context, input *CreateAuditLogInput) e
 		IPAddress:  input.IPAddress,
 	}
 
-	return s.repo.Create(ctx, log)
+	err := s.repo.Create(ctx, log)
+	if err != nil {
+	}
+	return err
 }
 
 type AuditLogQueryFilter struct {

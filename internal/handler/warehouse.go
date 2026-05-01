@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 
+	"warehouse/internal/middleware"
 	"warehouse/internal/model"
 	"warehouse/internal/pkg/response"
 	apperrors "warehouse/internal/pkg/errors"
@@ -73,7 +74,8 @@ func (h *WarehouseHandler) Create(c *gin.Context) {
 		input.Status = *req.Status
 	}
 
-	warehouse, err := h.warehouseService.Create(c.Request.Context(), input)
+	ctx := service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c))
+	warehouse, err := h.warehouseService.Create(ctx, input)
 	if err != nil {
 		handleWarehouseError(c, err)
 		return
@@ -137,7 +139,9 @@ func (h *WarehouseHandler) Update(c *gin.Context) {
 		Status:  req.Status,
 	}
 
-	warehouse, err := h.warehouseService.Update(c.Request.Context(), id, input)
+	ctx := service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c))
+	ctx = service.SetUserIDToContext(ctx, middleware.GetUserID(c))
+	warehouse, err := h.warehouseService.Update(ctx, id, input)
 	if err != nil {
 		handleWarehouseError(c, err)
 		return
@@ -153,7 +157,8 @@ func (h *WarehouseHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.warehouseService.Delete(c.Request.Context(), id)
+	ctx := service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c))
+	err = h.warehouseService.Delete(ctx, id)
 	if err != nil {
 		handleWarehouseError(c, err)
 		return

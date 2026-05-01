@@ -93,6 +93,7 @@ func (s *CustomerService) Create(ctx context.Context, input *CreateCustomerInput
 			Action:     "create",
 			NewValue:   map[string]any{"data": string(newValue)},
 			OperatedBy: customer.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 
@@ -183,6 +184,7 @@ func (s *CustomerService) Update(ctx context.Context, id int64, input *UpdateCus
 			OldValue:   map[string]any{"data": string(oldValue)},
 			NewValue:   map[string]any{"data": string(newValue)},
 			OperatedBy: customer.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 
@@ -208,6 +210,7 @@ func (s *CustomerService) Delete(ctx context.Context, id int64) error {
 			Action:     "delete",
 			OldValue:   map[string]any{"data": string(oldValue)},
 			OperatedBy: customer.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 

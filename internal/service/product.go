@@ -100,6 +100,7 @@ func (s *ProductService) Create(ctx context.Context, input *CreateProductInput) 
 			Action:     "create",
 			NewValue:   map[string]any{"data": string(newValue)},
 			OperatedBy: product.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 
@@ -194,6 +195,7 @@ func (s *ProductService) Update(ctx context.Context, id int64, input *UpdateProd
 			OldValue:   map[string]any{"data": string(oldValue)},
 			NewValue:   map[string]any{"data": string(newValue)},
 			OperatedBy: product.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 
@@ -219,6 +221,7 @@ func (s *ProductService) Delete(ctx context.Context, id int64) error {
 			Action:     "delete",
 			OldValue:   map[string]any{"data": string(oldValue)},
 			OperatedBy: product.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 

@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	ContextKeyUserID   = "user_id"
-	ContextKeyUsername = "username"
+	ContextKeyUserID    = "user_id"
+	ContextKeyUsername  = "username"
+	ContextKeyClientIP  = "client_ip"
 )
 
 func JWTAuth(jwtService *jwt.JWT) gin.HandlerFunc {
@@ -41,6 +42,7 @@ func JWTAuth(jwtService *jwt.JWT) gin.HandlerFunc {
 
 		c.Set(ContextKeyUserID, claims.UserID)
 		c.Set(ContextKeyUsername, claims.Username)
+		c.Set(ContextKeyClientIP, c.ClientIP())
 
 		c.Next()
 	}
@@ -60,4 +62,12 @@ func GetUsername(c *gin.Context) string {
 		return ""
 	}
 	return username.(string)
+}
+
+func GetClientIP(c *gin.Context) string {
+	clientIP, exists := c.Get(ContextKeyClientIP)
+	if !exists {
+		return ""
+	}
+	return clientIP.(string)
 }

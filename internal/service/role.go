@@ -44,6 +44,7 @@ func (s *RoleService) Create(ctx context.Context, role *model.Role) (*model.Role
 			Action:     "create",
 			NewValue:   map[string]any{"data": string(newValue)},
 			OperatedBy: role.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 
@@ -96,6 +97,7 @@ func (s *RoleService) Update(ctx context.Context, id int64, role *model.Role) (*
 			OldValue:   map[string]any{"data": string(oldValue)},
 			NewValue:   map[string]any{"data": string(newValue)},
 			OperatedBy: existing.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 
@@ -121,6 +123,7 @@ func (s *RoleService) Delete(ctx context.Context, id int64) error {
 			Action:     "delete",
 			OldValue:   map[string]any{"data": string(oldValue)},
 			OperatedBy: role.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 

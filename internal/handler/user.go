@@ -8,6 +8,7 @@ import (
 	"warehouse/internal/pkg/response"
 	apperrors "warehouse/internal/pkg/errors"
 	"warehouse/internal/service"
+	"warehouse/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -65,7 +66,7 @@ func (h *UserHandler) Create(c *gin.Context) {
 		input.Status = *req.Status
 	}
 
-	user, err := h.userService.Create(c.Request.Context(), input)
+	user, err := h.userService.Create(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), input)
 	if err != nil {
 		handleUserError(c, err)
 		return
@@ -125,7 +126,7 @@ func (h *UserHandler) Update(c *gin.Context) {
 		Status: req.Status,
 	}
 
-	user, err := h.userService.Update(c.Request.Context(), id, input)
+	user, err := h.userService.Update(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id, input)
 	if err != nil {
 		handleUserError(c, err)
 		return
@@ -141,7 +142,7 @@ func (h *UserHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.userService.Delete(c.Request.Context(), id)
+	err = h.userService.Delete(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id)
 	if err != nil {
 		handleUserError(c, err)
 		return

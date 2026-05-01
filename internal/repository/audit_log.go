@@ -17,7 +17,7 @@ func NewAuditLogRepository(db *bun.DB) *AuditLogRepository {
 }
 
 func (r *AuditLogRepository) Create(ctx context.Context, log *model.AuditLog) error {
-	_, err := r.db.NewInsert().Model(log).Exec(ctx)
+	_, err := r.db.NewInsert().Model(log).ExcludeColumn("operated_by_name").Exec(ctx)
 	return err
 }
 

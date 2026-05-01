@@ -4,9 +4,11 @@ import (
 	"context"
 	"strconv"
 
+	"warehouse/internal/middleware"
 	"warehouse/internal/model"
 	"warehouse/internal/pkg/response"
 	apperrors "warehouse/internal/pkg/errors"
+	"warehouse/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
@@ -99,7 +101,7 @@ func (h *RoleHandler) Create(c *gin.Context) {
 		Status:      req.Status,
 	}
 
-	createdRole, err := h.roleService.Create(c.Request.Context(), role)
+	createdRole, err := h.roleService.Create(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), role)
 	if err != nil {
 		handleRoleError(c, err)
 		return
@@ -130,7 +132,7 @@ func (h *RoleHandler) Update(c *gin.Context) {
 		role.Status = *req.Status
 	}
 
-	updatedRole, err := h.roleService.Update(c.Request.Context(), id, role)
+	updatedRole, err := h.roleService.Update(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id, role)
 	if err != nil {
 		handleRoleError(c, err)
 		return
@@ -146,7 +148,7 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.roleService.Delete(c.Request.Context(), id)
+	err = h.roleService.Delete(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id)
 	if err != nil {
 		handleRoleError(c, err)
 		return

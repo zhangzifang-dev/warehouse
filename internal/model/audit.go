@@ -13,7 +13,7 @@ type AuditLog struct {
 	OldValue        map[string]any `bun:"old_value,type:json" json:"old_value"`
 	NewValue        map[string]any `bun:"new_value,type:json" json:"new_value"`
 	OperatedBy      int64          `bun:"operated_by,notnull" json:"operated_by"`
-	OperatedByName  string         `bun:"operated_by_name" json:"operated_by_name"`
+	OperatedByName  string         `bun:"operated_by_name,type:varchar" json:"operated_by_name"`
 	OperatedAt      time.Time      `bun:"operated_at,notnull" json:"operated_at"`
 	IPAddress       string         `bun:"ip_address" json:"ip_address"`
 }

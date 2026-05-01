@@ -8,6 +8,7 @@ import (
 	"warehouse/internal/pkg/response"
 	apperrors "warehouse/internal/pkg/errors"
 	"warehouse/internal/service"
+	"warehouse/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -95,7 +96,7 @@ func (h *ProductHandler) Create(c *gin.Context) {
 		input.Status = *req.Status
 	}
 
-	product, err := h.productService.Create(c.Request.Context(), input)
+	product, err := h.productService.Create(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), input)
 	if err != nil {
 		handleProductError(c, err)
 		return
@@ -165,7 +166,7 @@ func (h *ProductHandler) Update(c *gin.Context) {
 		Status:        req.Status,
 	}
 
-	product, err := h.productService.Update(c.Request.Context(), id, input)
+	product, err := h.productService.Update(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id, input)
 	if err != nil {
 		handleProductError(c, err)
 		return
@@ -181,7 +182,7 @@ func (h *ProductHandler) Delete(c *gin.Context) {
 		return
 	}
 
-	err = h.productService.Delete(c.Request.Context(), id)
+	err = h.productService.Delete(service.SetClientIPToContext(c.Request.Context(), middleware.GetClientIP(c)), id)
 	if err != nil {
 		handleProductError(c, err)
 		return

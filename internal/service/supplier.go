@@ -93,6 +93,7 @@ func (s *SupplierService) Create(ctx context.Context, input *CreateSupplierInput
 			Action:     "create",
 			NewValue:   map[string]any{"data": string(newValue)},
 			OperatedBy: supplier.CreatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 
@@ -183,6 +184,7 @@ func (s *SupplierService) Update(ctx context.Context, id int64, input *UpdateSup
 			OldValue:   map[string]any{"data": string(oldValue)},
 			NewValue:   map[string]any{"data": string(newValue)},
 			OperatedBy: supplier.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 
@@ -208,6 +210,7 @@ func (s *SupplierService) Delete(ctx context.Context, id int64) error {
 			Action:     "delete",
 			OldValue:   map[string]any{"data": string(oldValue)},
 			OperatedBy: supplier.UpdatedBy,
+			IPAddress:  GetClientIPFromContext(ctx),
 		})
 	}
 

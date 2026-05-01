@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type contextKey string
+
+const userIDKey contextKey = "user_id"
+
 type BaseModel struct {
 	ID        int64      `bun:"id,pk,autoincrement" json:"id"`
 	CreatedAt time.Time  `bun:"created_at" json:"created_at"`
@@ -23,6 +27,9 @@ func (m *BaseModel) BeforeCreate(ctx context.Context) error {
 
 func (m *BaseModel) BeforeUpdate(ctx context.Context) error {
 	m.UpdatedAt = time.Now()
+	if userID, ok := ctx.Value(userIDKey).(int64); ok && userID > 0 {
+		m.UpdatedBy = userID
+	}
 	return nil
 }
 
