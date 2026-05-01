@@ -155,7 +155,7 @@ export function AuditLogList() {
           dataIndex="newValue" 
           ellipsis
           render={(val: string, record: { isDifferent: boolean }) => (
-            <span style={{ fontWeight: record.isDifferent ? 600 : 400, color: token.colorText }}>
+            <span style={{ fontWeight: record.isDifferent ? 600 : 400, color: record.isDifferent ? '#ff4d4f' : token.colorText }}>
               {val}
             </span>
           )}
