@@ -55,6 +55,7 @@ type AuditLogQueryFilter struct {
 	RecordID        *int64
 	OperatedBy      *int64
 	OperatedByName  string
+	Action          string
 	StartTime       *time.Time
 	EndTime         *time.Time
 	Page            int
@@ -86,6 +87,7 @@ func (s *AuditLogService) List(ctx context.Context, filter *AuditLogQueryFilter)
 		RecordID:   filter.RecordID,
 		OperatedBy: filter.OperatedBy,
 		OperatedByName:  filter.OperatedByName,
+		Action:         filter.Action,
 		StartTime:  filter.StartTime,
 		EndTime:    filter.EndTime,
 		Page:       filter.Page,

@@ -7,6 +7,7 @@ export interface AuditLogFilter {
   record_id?: number
   operated_by?: number
   operated_by_name?: string
+  action?: string
   start_time?: string
   end_time?: string
 }

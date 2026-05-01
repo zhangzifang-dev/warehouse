@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, Input, DatePicker, Space, Modal, Descriptions, Tag, theme } from 'antd'
+import { Table, Input, DatePicker, Space, Modal, Descriptions, Tag, theme, Select } from 'antd'
 import { useQuery } from '@tanstack/react-query'
 import { auditLogApi, type AuditLogFilter } from '../../api/auditLog'
 import type { AuditLog } from '../../types/system'
@@ -38,6 +38,11 @@ export function AuditLogList() {
 
   const handleOperatedByNameChange = (value: string) => {
     setFilter(prev => ({ ...prev, operated_by_name: value || undefined }))
+    setPage(1)
+  }
+
+  const handleActionChange = (value: string | undefined) => {
+    setFilter(prev => ({ ...prev, action: value }))
     setPage(1)
   }
 
@@ -186,6 +191,18 @@ export function AuditLogList() {
             value={filter.operated_by_name || ''}
             onChange={e => handleOperatedByNameChange(e.target.value)}
             allowClear
+          />
+          <Select
+            placeholder="操作"
+            style={{ width: 120 }}
+            value={filter.action}
+            onChange={handleActionChange}
+            allowClear
+            options={[
+              { value: 'create', label: '创建' },
+              { value: 'update', label: '更新' },
+              { value: 'delete', label: '删除' }
+            ]}
           />
           <Input
             placeholder="记录ID"

@@ -65,6 +65,10 @@ func (h *AuditLogHandler) List(c *gin.Context) {
 		filter.OperatedByName = operatedByName
 	}
 
+	if action := c.Query("action"); action != "" {
+		filter.Action = action
+	}
+
 	if startTimeStr := c.Query("start_time"); startTimeStr != "" {
 		if startTime, err := time.Parse(time.RFC3339, startTimeStr); err == nil {
 			filter.StartTime = &startTime
