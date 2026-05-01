@@ -6,8 +6,6 @@ import { userApi } from '../../api/user'
 import type { AuditLog } from '../../types/system'
 import dayjs from 'dayjs'
 
-const { RangePicker } = DatePicker
-
 export function AuditLogList() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -57,16 +55,24 @@ export function AuditLogList() {
     setPage(1)
   }
 
-  const handleDateChange = (dates: [dayjs.Dayjs | null, dayjs.Dayjs | null] | null) => {
-    if (dates && dates[0] && dates[1]) {
-      setFilter(prev => ({
-        ...prev,
-        start_time: dates[0]!.toISOString(),
-        end_time: dates[1]!.toISOString()
-      }))
+  const handleStartTimeChange = (date: dayjs.Dayjs | null) => {
+    if (date) {
+      setFilter(prev => ({ ...prev, start_time: date.toISOString() }))
     } else {
       setFilter(prev => {
-        const { start_time, end_time, ...rest } = prev
+        const { start_time, ...rest } = prev
+        return rest
+      })
+    }
+    setPage(1)
+  }
+
+  const handleEndTimeChange = (date: dayjs.Dayjs | null) => {
+    if (date) {
+      setFilter(prev => ({ ...prev, end_time: date.toISOString() }))
+    } else {
+      setFilter(prev => {
+        const { end_time, ...rest } = prev
         return rest
       })
     }
@@ -229,9 +235,19 @@ export function AuditLogList() {
             onChange={e => handleRecordIdChange(e.target.value)}
             allowClear
           />
-          <RangePicker
+          <DatePicker
+            placeholder="开始日期"
             showTime
-            onChange={(dates) => handleDateChange(dates as [dayjs.Dayjs | null, dayjs.Dayjs | null] | null)}
+            style={{ width: 180 }}
+            value={filter.start_time ? dayjs(filter.start_time) : null}
+            onChange={handleStartTimeChange}
+          />
+          <DatePicker
+            placeholder="结束日期"
+            showTime
+            style={{ width: 180 }}
+            value={filter.end_time ? dayjs(filter.end_time) : null}
+            onChange={handleEndTimeChange}
           />
         </Space>
       </div>
