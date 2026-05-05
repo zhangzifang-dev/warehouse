@@ -105,7 +105,7 @@ func TestInboundOrderService_Create_Success(t *testing.T) {
 	}
 	mockItemRepo := &mockInboundItemRepository{}
 
-	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, nil)
+	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, nil, nil)
 	input := &CreateInboundOrderInput{
 		OrderNo:       "PO-2024-001",
 		WarehouseID:   1,
@@ -129,7 +129,7 @@ func TestInboundOrderService_Create_MissingWarehouseID(t *testing.T) {
 	mockOrderRepo := &mockInboundOrderRepository{}
 	mockItemRepo := &mockInboundItemRepository{}
 
-	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, nil)
+	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, nil, nil)
 	input := &CreateInboundOrderInput{
 		OrderNo:       "PO-2024-001",
 		TotalQuantity: 100,
@@ -154,7 +154,7 @@ func TestInboundOrderService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	order, err := svc.GetByID(context.Background(), 1)
 
@@ -176,7 +176,7 @@ func TestInboundOrderService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -195,7 +195,7 @@ func TestInboundOrderService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	result, err := svc.List(context.Background(), 1, 10, 0, 0)
 
@@ -228,7 +228,7 @@ func TestInboundOrderService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 	input := &UpdateInboundOrderInput{
 		TotalQuantity: floatPtr(200),
 	}
@@ -253,7 +253,7 @@ func TestInboundOrderService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -269,7 +269,7 @@ func TestInboundOrderService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	err := svc.Delete(context.Background(), 999)
 
@@ -307,7 +307,7 @@ func TestInboundOrderService_Confirm_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, mockInventorySvc)
+	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, mockInventorySvc, nil)
 
 	order, err := svc.Confirm(context.Background(), 1)
 
@@ -329,7 +329,7 @@ func TestInboundOrderService_Confirm_AlreadyCompleted(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 
@@ -348,7 +348,7 @@ func TestInboundOrderService_Confirm_AlreadyCancelled(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 

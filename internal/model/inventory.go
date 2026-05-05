@@ -9,6 +9,15 @@ type Inventory struct {
 	BatchNo     string  `bun:"batch_no" json:"batch_no"`
 }
 
+type InventoryQueryFilter struct {
+	ProductName string
+	QuantityMin *float64
+	QuantityMax *float64
+	BatchNo     string
+	Page        int
+	PageSize    int
+}
+
 func (i *Inventory) TableName() string {
 	return "inventories"
 }

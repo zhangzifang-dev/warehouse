@@ -57,7 +57,7 @@ type CheckStockResponse struct {
 type InventoryService interface {
 	Create(ctx context.Context, input *service.CreateInventoryInput) (*model.Inventory, error)
 	GetByID(ctx context.Context, id int64) (*model.Inventory, error)
-	List(ctx context.Context, page, pageSize int, warehouseID, productID int64) (*service.ListInventoriesResult, error)
+	List(ctx context.Context, filter *model.InventoryQueryFilter) (*service.ListInventoriesResult, error)
 	Update(ctx context.Context, id int64, input *service.UpdateInventoryInput) (*model.Inventory, error)
 	Delete(ctx context.Context, id int64) error
 	AdjustQuantity(ctx context.Context, input *service.AdjustQuantityInput) (*model.Inventory, error)
@@ -124,10 +124,33 @@ func (h *InventoryHandler) GetByID(c *gin.Context) {
 func (h *InventoryHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
-	warehouseID, _ := strconv.ParseInt(c.Query("warehouse_id"), 10, 64)
-	productID, _ := strconv.ParseInt(c.Query("product_id"), 10, 64)
+	
+	filter := &model.InventoryQueryFilter{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	
+	if productName := c.Query("product_name"); productName != "" {
+		filter.ProductName = productName
+	}
+	
+	if batchNo := c.Query("batch_no"); batchNo != "" {
+		filter.BatchNo = batchNo
+	}
+	
+	if quantityMinStr := c.Query("quantity_min"); quantityMinStr != "" {
+		if quantityMin, err := strconv.ParseFloat(quantityMinStr, 64); err == nil {
+			filter.QuantityMin = &quantityMin
+		}
+	}
+	
+	if quantityMaxStr := c.Query("quantity_max"); quantityMaxStr != "" {
+		if quantityMax, err := strconv.ParseFloat(quantityMaxStr, 64); err == nil {
+			filter.QuantityMax = &quantityMax
+		}
+	}
 
-	result, err := h.inventoryService.List(c.Request.Context(), page, pageSize, warehouseID, productID)
+	result, err := h.inventoryService.List(c.Request.Context(), filter)
 	if err != nil {
 		handleInventoryError(c, err)
 		return

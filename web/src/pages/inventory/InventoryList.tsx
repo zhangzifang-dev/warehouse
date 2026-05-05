@@ -3,6 +3,7 @@ import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, message,
 import { PlusOutlined, EditOutlined, ToolOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { inventoryApi } from '../../api/inventory'
+import type { InventoryFilter } from '../../api/inventory'
 import { warehouseApi } from '../../api/warehouse'
 import { productApi } from '../../api/product'
 import type { Inventory, CreateInventoryRequest, UpdateInventoryRequest, AdjustQuantityRequest } from '../../types/inventory'
@@ -10,7 +11,7 @@ import type { Inventory, CreateInventoryRequest, UpdateInventoryRequest, AdjustQ
 export function InventoryList() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
-  const [warehouseFilter, setWarehouseFilter] = useState<number | undefined>()
+  const [filter, setFilter] = useState<InventoryFilter>({})
   const [modalOpen, setModalOpen] = useState(false)
   const [adjustModalOpen, setAdjustModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -20,8 +21,8 @@ export function InventoryList() {
   const [messageApi, contextHolder] = message.useMessage()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['inventory', page, pageSize, warehouseFilter],
-    queryFn: () => inventoryApi.list(page, pageSize, warehouseFilter)
+    queryKey: ['inventory', page, pageSize, filter],
+    queryFn: () => inventoryApi.list(page, pageSize, filter)
   })
 
   const { data: warehouses } = useQuery({
@@ -63,6 +64,11 @@ export function InventoryList() {
     },
     onError: () => messageApi.error('调整失败')
   })
+
+  const handleFilterChange = (key: string, value: any) => {
+    setFilter(prev => ({ ...prev, [key]: value || undefined }))
+    setPage(1)
+  }
 
   const handleOpenCreate = () => {
     setEditingId(null)
@@ -151,14 +157,32 @@ export function InventoryList() {
   return (
     <>
       {contextHolder}
-      <div style={{ marginBottom: 16, display: 'flex', gap: 16 }}>
-        <Select
+      <div style={{ marginBottom: 16, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <Input
+          placeholder="商品名称"
           allowClear
-          placeholder="筛选仓库"
-          style={{ width: 200 }}
-          value={warehouseFilter}
-          onChange={setWarehouseFilter}
-          options={warehouses?.items?.map(w => ({ value: w.id, label: w.name })) || []}
+          style={{ width: 150 }}
+          value={filter.product_name}
+          onChange={(e) => handleFilterChange('product_name', e.target.value)}
+        />
+        <InputNumber
+          placeholder="最小数量"
+          style={{ width: 120 }}
+          value={filter.quantity_min}
+          onChange={(value) => handleFilterChange('quantity_min', value)}
+        />
+        <InputNumber
+          placeholder="最大数量"
+          style={{ width: 120 }}
+          value={filter.quantity_max}
+          onChange={(value) => handleFilterChange('quantity_max', value)}
+        />
+        <Input
+          placeholder="批次号"
+          allowClear
+          style={{ width: 150 }}
+          value={filter.batch_no}
+          onChange={(e) => handleFilterChange('batch_no', e.target.value)}
         />
         <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
           新增库存
