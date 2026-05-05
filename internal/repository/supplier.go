@@ -16,6 +16,16 @@ func NewSupplierRepository(db *bun.DB) *SupplierRepository {
 	return &SupplierRepository{db: db}
 }
 
+type SupplierQueryFilter struct {
+	Code     string
+	Name     string
+	Contact  string
+	Phone    string
+	Status   *int
+	Page     int
+	PageSize int
+}
+
 func (r *SupplierRepository) Create(ctx context.Context, supplier *model.Supplier) error {
 	_, err := r.db.NewInsert().Model(supplier).Exec(ctx)
 	return err
@@ -47,20 +57,33 @@ func (r *SupplierRepository) GetByCode(ctx context.Context, code string) (*model
 	return supplier, nil
 }
 
-func (r *SupplierRepository) List(ctx context.Context, page, pageSize int, keyword string) ([]model.Supplier, int, error) {
+func (r *SupplierRepository) List(ctx context.Context, filter *SupplierQueryFilter) ([]model.Supplier, int, error) {
 	var suppliers []model.Supplier
-	query := r.db.NewSelect().
+
+	q := r.db.NewSelect().
 		Model(&suppliers).
 		Where("deleted_at IS NULL")
 
-	if keyword != "" {
-		query = query.Where("name LIKE ? OR code LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	if filter.Code != "" {
+		q = q.Where("code LIKE ?", "%"+filter.Code+"%")
+	}
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+	if filter.Contact != "" {
+		q = q.Where("contact LIKE ?", "%"+filter.Contact+"%")
+	}
+	if filter.Phone != "" {
+		q = q.Where("phone LIKE ?", "%"+filter.Phone+"%")
+	}
+	if filter.Status != nil {
+		q = q.Where("status = ?", *filter.Status)
 	}
 
-	total, err := query.
+	total, err := q.
 		Order("id DESC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
+		Offset((filter.Page - 1) * filter.PageSize).
+		Limit(filter.PageSize).
 		ScanAndCount(ctx)
 	if err != nil {
 		return nil, 0, err

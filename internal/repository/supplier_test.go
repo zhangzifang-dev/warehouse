@@ -42,7 +42,8 @@ func TestSupplierRepository_GetByCode_Query(t *testing.T) {
 
 func TestSupplierRepository_List_Query(t *testing.T) {
 	repo, _, ctx := setupSupplierTest(t)
-	_, _, err := repo.List(ctx, 1, 10, "")
+	filter := &SupplierQueryFilter{Page: 1, PageSize: 10}
+	_, _, err := repo.List(ctx, filter)
 	if err == nil {
 		t.Error("List() should return error with mock DB")
 	}
@@ -50,7 +51,63 @@ func TestSupplierRepository_List_Query(t *testing.T) {
 
 func TestSupplierRepository_List_WithKeyword(t *testing.T) {
 	repo, _, ctx := setupSupplierTest(t)
-	_, _, err := repo.List(ctx, 1, 10, "test")
+	filter := &SupplierQueryFilter{Name: "test", Page: 1, PageSize: 10}
+	_, _, err := repo.List(ctx, filter)
+	if err == nil {
+		t.Error("List() should return error with mock DB")
+	}
+}
+
+func TestSupplierRepository_List_WithCodeFilter(t *testing.T) {
+	repo, _, ctx := setupSupplierTest(t)
+	filter := &SupplierQueryFilter{Code: "SUP", Page: 1, PageSize: 10}
+	_, _, err := repo.List(ctx, filter)
+	if err == nil {
+		t.Error("List() should return error with mock DB")
+	}
+}
+
+func TestSupplierRepository_List_WithContactFilter(t *testing.T) {
+	repo, _, ctx := setupSupplierTest(t)
+	filter := &SupplierQueryFilter{Contact: "John", Page: 1, PageSize: 10}
+	_, _, err := repo.List(ctx, filter)
+	if err == nil {
+		t.Error("List() should return error with mock DB")
+	}
+}
+
+func TestSupplierRepository_List_WithPhoneFilter(t *testing.T) {
+	repo, _, ctx := setupSupplierTest(t)
+	filter := &SupplierQueryFilter{Phone: "123", Page: 1, PageSize: 10}
+	_, _, err := repo.List(ctx, filter)
+	if err == nil {
+		t.Error("List() should return error with mock DB")
+	}
+}
+
+func TestSupplierRepository_List_WithStatusFilter(t *testing.T) {
+	repo, _, ctx := setupSupplierTest(t)
+	status := 1
+	filter := &SupplierQueryFilter{Status: &status, Page: 1, PageSize: 10}
+	_, _, err := repo.List(ctx, filter)
+	if err == nil {
+		t.Error("List() should return error with mock DB")
+	}
+}
+
+func TestSupplierRepository_List_WithMultipleFilters(t *testing.T) {
+	repo, _, ctx := setupSupplierTest(t)
+	status := 1
+	filter := &SupplierQueryFilter{
+		Code:    "SUP",
+		Name:    "Test",
+		Contact: "John",
+		Phone:   "123",
+		Status:  &status,
+		Page:    1,
+		PageSize: 10,
+	}
+	_, _, err := repo.List(ctx, filter)
 	if err == nil {
 		t.Error("List() should return error with mock DB")
 	}
