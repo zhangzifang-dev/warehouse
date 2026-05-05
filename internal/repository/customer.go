@@ -8,6 +8,15 @@ import (
 	"warehouse/internal/model"
 )
 
+type CustomerQueryFilter struct {
+	Code     string
+	Name     string
+	Phone    string
+	Status   *int
+	Page     int
+	PageSize int
+}
+
 type CustomerRepository struct {
 	db *bun.DB
 }
@@ -47,20 +56,29 @@ func (r *CustomerRepository) GetByCode(ctx context.Context, code string) (*model
 	return customer, nil
 }
 
-func (r *CustomerRepository) List(ctx context.Context, page, pageSize int, keyword string) ([]model.Customer, int, error) {
+func (r *CustomerRepository) List(ctx context.Context, filter *CustomerQueryFilter) ([]model.Customer, int, error) {
 	var customers []model.Customer
-	query := r.db.NewSelect().
+	q := r.db.NewSelect().
 		Model(&customers).
 		Where("deleted_at IS NULL")
 
-	if keyword != "" {
-		query = query.Where("name LIKE ? OR code LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	if filter.Code != "" {
+		q = q.Where("code LIKE ?", "%"+filter.Code+"%")
+	}
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+	if filter.Phone != "" {
+		q = q.Where("phone LIKE ?", "%"+filter.Phone+"%")
+	}
+	if filter.Status != nil {
+		q = q.Where("status = ?", *filter.Status)
 	}
 
-	total, err := query.
+	total, err := q.
 		Order("id DESC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
+		Offset((filter.Page - 1) * filter.PageSize).
+		Limit(filter.PageSize).
 		ScanAndCount(ctx)
 	if err != nil {
 		return nil, 0, err

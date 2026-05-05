@@ -43,7 +43,7 @@ type CustomerListResponse struct {
 type CustomerService interface {
 	Create(ctx context.Context, input *service.CreateCustomerInput) (*model.Customer, error)
 	GetByID(ctx context.Context, id int64) (*model.Customer, error)
-	List(ctx context.Context, page, pageSize int, keyword string) (*service.ListCustomersResult, error)
+	List(ctx context.Context, filter *service.CustomerQueryFilter) (*service.ListCustomersResult, error)
 	Update(ctx context.Context, id int64, input *service.UpdateCustomerInput) (*model.Customer, error)
 	Delete(ctx context.Context, id int64) error
 }
@@ -116,9 +116,22 @@ func (h *CustomerHandler) GetByID(c *gin.Context) {
 func (h *CustomerHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
-	keyword := c.Query("keyword")
 
-	result, err := h.customerService.List(c.Request.Context(), page, pageSize, keyword)
+	filter := &service.CustomerQueryFilter{
+		Code:     c.Query("code"),
+		Name:     c.Query("name"),
+		Phone:    c.Query("phone"),
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	if statusStr := c.Query("status"); statusStr != "" {
+		if status, err := strconv.Atoi(statusStr); err == nil {
+			filter.Status = &status
+		}
+	}
+
+	result, err := h.customerService.List(c.Request.Context(), filter)
 	if err != nil {
 		handleCustomerError(c, err)
 		return

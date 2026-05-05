@@ -2,10 +2,21 @@ import api from './client'
 import type { Customer, CreateCustomerRequest, UpdateCustomerRequest } from '../types/partner'
 import type { PaginatedResponse } from '../types/warehouse'
 
+export interface CustomerFilter {
+  code?: string
+  name?: string
+  phone?: string
+  status?: number
+}
+
 export const customerApi = {
-  list: async (page = 1, size = 10): Promise<PaginatedResponse<Customer>> => {
+  list: async (page = 1, size = 10, filter?: CustomerFilter): Promise<PaginatedResponse<Customer>> => {
     const response = await api.get<PaginatedResponse<Customer>>('/customers', {
-      params: { page, size }
+      params: { 
+        page, 
+        size,
+        ...filter
+      }
     })
     return response.data
   },

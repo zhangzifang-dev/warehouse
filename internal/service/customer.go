@@ -6,13 +6,23 @@ import (
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
+	"warehouse/internal/repository"
 )
+
+type CustomerQueryFilter struct {
+	Code     string
+	Name     string
+	Phone    string
+	Status   *int
+	Page     int
+	PageSize int
+}
 
 type CustomerRepository interface {
 	Create(ctx context.Context, customer *model.Customer) error
 	GetByID(ctx context.Context, id int64) (*model.Customer, error)
 	GetByCode(ctx context.Context, code string) (*model.Customer, error)
-	List(ctx context.Context, page, pageSize int, keyword string) ([]model.Customer, int, error)
+	List(ctx context.Context, filter *repository.CustomerQueryFilter) ([]model.Customer, int, error)
 	Update(ctx context.Context, customer *model.Customer) error
 	Delete(ctx context.Context, id int64) error
 }
@@ -108,18 +118,27 @@ func (s *CustomerService) GetByID(ctx context.Context, id int64) (*model.Custome
 	return customer, nil
 }
 
-func (s *CustomerService) List(ctx context.Context, page, pageSize int, keyword string) (*ListCustomersResult, error) {
-	if page < 1 {
-		page = 1
+func (s *CustomerService) List(ctx context.Context, filter *CustomerQueryFilter) (*ListCustomersResult, error) {
+	if filter.Page < 1 {
+		filter.Page = 1
 	}
-	if pageSize < 1 {
-		pageSize = 10
+	if filter.PageSize < 1 {
+		filter.PageSize = 10
 	}
-	if pageSize > 100 {
-		pageSize = 100
+	if filter.PageSize > 100 {
+		filter.PageSize = 100
 	}
 
-	customers, total, err := s.customerRepo.List(ctx, page, pageSize, keyword)
+	repoFilter := &repository.CustomerQueryFilter{
+		Code:     filter.Code,
+		Name:     filter.Name,
+		Phone:    filter.Phone,
+		Status:   filter.Status,
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}
+
+	customers, total, err := s.customerRepo.List(ctx, repoFilter)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list customers")
 	}

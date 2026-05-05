@@ -18,16 +18,16 @@ import (
 )
 
 type mockCustomerService struct {
-	listFunc    func(ctx context.Context, page, pageSize int, keyword string) (*service.ListCustomersResult, error)
-	getByIDFunc func(ctx context.Context, id int64) (*model.Customer, error)
-	createFunc  func(ctx context.Context, input *service.CreateCustomerInput) (*model.Customer, error)
-	updateFunc  func(ctx context.Context, id int64, input *service.UpdateCustomerInput) (*model.Customer, error)
-	deleteFunc  func(ctx context.Context, id int64) error
+	listWithFilterFunc func(ctx context.Context, filter *service.CustomerQueryFilter) (*service.ListCustomersResult, error)
+	getByIDFunc        func(ctx context.Context, id int64) (*model.Customer, error)
+	createFunc         func(ctx context.Context, input *service.CreateCustomerInput) (*model.Customer, error)
+	updateFunc         func(ctx context.Context, id int64, input *service.UpdateCustomerInput) (*model.Customer, error)
+	deleteFunc         func(ctx context.Context, id int64) error
 }
 
-func (m *mockCustomerService) List(ctx context.Context, page, pageSize int, keyword string) (*service.ListCustomersResult, error) {
-	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize, keyword)
+func (m *mockCustomerService) List(ctx context.Context, filter *service.CustomerQueryFilter) (*service.ListCustomersResult, error) {
+	if m.listWithFilterFunc != nil {
+		return m.listWithFilterFunc(ctx, filter)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -70,15 +70,22 @@ func setupCustomerHandlerTest(t *testing.T) (*gin.Engine, *CustomerHandler, *moc
 
 func TestCustomerHandler_List(t *testing.T) {
 	tests := []struct {
-		name          string
-		mockCustomers []model.Customer
-		mockTotal     int
-		mockError     error
-		queryKeyword  string
-		queryPage     string
-		querySize     string
-		wantStatus    int
-		wantTotal     int
+		name               string
+		mockCustomers      []model.Customer
+		mockTotal          int
+		mockError          error
+		queryCode          string
+		queryName          string
+		queryPhone         string
+		queryStatus        string
+		queryPage          string
+		querySize          string
+		wantStatus         int
+		wantTotal          int
+		wantCodeFilter     string
+		wantNameFilter     string
+		wantPhoneFilter    string
+		wantStatusFilter   *int
 	}{
 		{
 			name: "success with default pagination",
@@ -91,14 +98,55 @@ func TestCustomerHandler_List(t *testing.T) {
 			wantTotal:  2,
 		},
 		{
-			name: "success with keyword filter",
-			mockCustomers: []model.Customer{
-				{BaseModel: model.BaseModel{ID: 1}, Name: "Test Customer"},
-			},
-			mockTotal:    1,
-			queryKeyword: "Test",
-			wantStatus:   http.StatusOK,
-			wantTotal:    1,
+			name:            "success with code filter",
+			mockCustomers:   []model.Customer{{BaseModel: model.BaseModel{ID: 1}, Name: "Test Customer", Code: "CUS001"}},
+			mockTotal:       1,
+			queryCode:       "CUS",
+			wantStatus:      http.StatusOK,
+			wantTotal:       1,
+			wantCodeFilter:  "CUS",
+		},
+		{
+			name:            "success with name filter",
+			mockCustomers:   []model.Customer{{BaseModel: model.BaseModel{ID: 1}, Name: "Test Customer"}},
+			mockTotal:       1,
+			queryName:       "Test",
+			wantStatus:      http.StatusOK,
+			wantTotal:       1,
+			wantNameFilter:  "Test",
+		},
+		{
+			name:             "success with phone filter",
+			mockCustomers:    []model.Customer{{BaseModel: model.BaseModel{ID: 1}, Name: "Customer A", Phone: "123456"}},
+			mockTotal:        1,
+			queryPhone:       "123",
+			wantStatus:       http.StatusOK,
+			wantTotal:        1,
+			wantPhoneFilter:  "123",
+		},
+		{
+			name:             "success with status filter",
+			mockCustomers:    []model.Customer{{BaseModel: model.BaseModel{ID: 1}, Name: "Customer A", Status: 1}},
+			mockTotal:        1,
+			queryStatus:      "1",
+			wantStatus:       http.StatusOK,
+			wantTotal:        1,
+			wantStatusFilter: intPtrHandler(1),
+		},
+		{
+			name:              "success with all filters",
+			mockCustomers:     []model.Customer{{BaseModel: model.BaseModel{ID: 1}, Name: "Test", Code: "CUS", Phone: "123", Status: 1}},
+			mockTotal:         1,
+			queryCode:         "CUS",
+			queryName:         "Test",
+			queryPhone:        "123",
+			queryStatus:       "1",
+			wantStatus:        http.StatusOK,
+			wantTotal:         1,
+			wantCodeFilter:    "CUS",
+			wantNameFilter:    "Test",
+			wantPhoneFilter:   "123",
+			wantStatusFilter:  intPtrHandler(1),
 		},
 		{
 			name:          "empty list",
@@ -117,9 +165,25 @@ func TestCustomerHandler_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router, handler, mockSvc := setupCustomerHandlerTest(t)
-			mockSvc.listFunc = func(ctx context.Context, page, pageSize int, keyword string) (*service.ListCustomersResult, error) {
+			mockSvc.listWithFilterFunc = func(ctx context.Context, filter *service.CustomerQueryFilter) (*service.ListCustomersResult, error) {
 				if tt.mockError != nil {
 					return nil, tt.mockError
+				}
+				if tt.wantCodeFilter != "" && filter.Code != tt.wantCodeFilter {
+					t.Errorf("expected code filter '%s', got '%s'", tt.wantCodeFilter, filter.Code)
+				}
+				if tt.wantNameFilter != "" && filter.Name != tt.wantNameFilter {
+					t.Errorf("expected name filter '%s', got '%s'", tt.wantNameFilter, filter.Name)
+				}
+				if tt.wantPhoneFilter != "" && filter.Phone != tt.wantPhoneFilter {
+					t.Errorf("expected phone filter '%s', got '%s'", tt.wantPhoneFilter, filter.Phone)
+				}
+				if tt.wantStatusFilter != nil {
+					if filter.Status == nil {
+						t.Error("expected status filter, got nil")
+					} else if *filter.Status != *tt.wantStatusFilter {
+						t.Errorf("expected status filter %d, got %d", *tt.wantStatusFilter, *filter.Status)
+					}
 				}
 				return &service.ListCustomersResult{
 					Customers: tt.mockCustomers,
@@ -129,7 +193,27 @@ func TestCustomerHandler_List(t *testing.T) {
 
 			router.GET("/customers", handler.List)
 
-			req := httptest.NewRequest("GET", "/customers?keyword="+tt.queryKeyword+"&page="+tt.queryPage+"&size="+tt.querySize, nil)
+			url := "/customers?"
+			if tt.queryCode != "" {
+				url += "code=" + tt.queryCode + "&"
+			}
+			if tt.queryName != "" {
+				url += "name=" + tt.queryName + "&"
+			}
+			if tt.queryPhone != "" {
+				url += "phone=" + tt.queryPhone + "&"
+			}
+			if tt.queryStatus != "" {
+				url += "status=" + tt.queryStatus + "&"
+			}
+			if tt.queryPage != "" {
+				url += "page=" + tt.queryPage + "&"
+			}
+			if tt.querySize != "" {
+				url += "size=" + tt.querySize + "&"
+			}
+
+			req := httptest.NewRequest("GET", url, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 
@@ -320,10 +404,10 @@ func TestCustomerHandler_Update(t *testing.T) {
 
 func TestCustomerHandler_Delete(t *testing.T) {
 	tests := []struct {
-		name        string
-		customerID  string
-		mockError   error
-		wantStatus  int
+		name       string
+		customerID string
+		mockError  error
+		wantStatus int
 	}{
 		{
 			name:       "success",
@@ -363,4 +447,8 @@ func TestCustomerHandler_Delete(t *testing.T) {
 
 func strPtrCustomerHandler(s string) *string {
 	return &s
+}
+
+func intPtrHandler(i int) *int {
+	return &i
 }
