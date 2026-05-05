@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"time"
 	"context"
+	"time"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -14,6 +14,12 @@ type WarehouseRepository struct {
 
 func NewWarehouseRepository(db *bun.DB) *WarehouseRepository {
 	return &WarehouseRepository{db: db}
+}
+
+type WarehouseFilter struct {
+	Name     string
+	Page     int
+	PageSize int
 }
 
 func (r *WarehouseRepository) Create(ctx context.Context, warehouse *model.Warehouse) error {
@@ -47,14 +53,21 @@ func (r *WarehouseRepository) GetByCode(ctx context.Context, code string) (*mode
 	return warehouse, nil
 }
 
-func (r *WarehouseRepository) List(ctx context.Context, page, pageSize int) ([]model.Warehouse, int, error) {
+func (r *WarehouseRepository) List(ctx context.Context, filter *WarehouseFilter) ([]model.Warehouse, int, error) {
 	var warehouses []model.Warehouse
-	total, err := r.db.NewSelect().
+
+	q := r.db.NewSelect().
 		Model(&warehouses).
-		Where("deleted_at IS NULL").
+		Where("deleted_at IS NULL")
+
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
+	}
+
+	total, err := q.
 		Order("id DESC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
+		Offset((filter.Page - 1) * filter.PageSize).
+		Limit(filter.PageSize).
 		ScanAndCount(ctx)
 	if err != nil {
 		return nil, 0, err

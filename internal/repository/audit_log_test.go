@@ -52,7 +52,7 @@ func TestAuditLogRepository_List_WithFilters(t *testing.T) {
 	endTime := time.Now()
 
 	filter := &AuditLogFilter{
-		TableName:  "users",
+		TableName:  []string{"users"},
 		RecordID:   &recordID,
 		OperatedBy: &operatedBy,
 		StartTime:  &startTime,

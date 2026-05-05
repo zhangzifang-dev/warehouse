@@ -53,7 +53,8 @@ func TestWarehouseRepository_GetByCode_Query(t *testing.T) {
 
 func TestWarehouseRepository_List_Query(t *testing.T) {
 	repo, _, ctx := setupWarehouseTest(t)
-	_, _, err := repo.List(ctx, 1, 10)
+	filter := &WarehouseFilter{Page: 1, PageSize: 10}
+	_, _, err := repo.List(ctx, filter)
 	if err == nil {
 		t.Error("List() should return error with mock DB")
 	}

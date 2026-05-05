@@ -5,14 +5,21 @@ import (
 	"encoding/json"
 
 	"warehouse/internal/model"
+	"warehouse/internal/repository"
 	apperrors "warehouse/internal/pkg/errors"
 )
+
+type WarehouseFilter struct {
+	Name     string
+	Page     int
+	PageSize int
+}
 
 type WarehouseRepository interface {
 	Create(ctx context.Context, warehouse *model.Warehouse) error
 	GetByID(ctx context.Context, id int64) (*model.Warehouse, error)
 	GetByCode(ctx context.Context, code string) (*model.Warehouse, error)
-	List(ctx context.Context, page, pageSize int) ([]model.Warehouse, int, error)
+	List(ctx context.Context, filter *repository.WarehouseFilter) ([]model.Warehouse, int, error)
 	Update(ctx context.Context, warehouse *model.Warehouse) error
 	Delete(ctx context.Context, id int64) error
 }
@@ -105,18 +112,24 @@ func (s *WarehouseService) GetByID(ctx context.Context, id int64) (*model.Wareho
 	return warehouse, nil
 }
 
-func (s *WarehouseService) List(ctx context.Context, page, pageSize int) (*ListWarehousesResult, error) {
-	if page < 1 {
-		page = 1
+func (s *WarehouseService) List(ctx context.Context, filter *WarehouseFilter) (*ListWarehousesResult, error) {
+	if filter.Page < 1 {
+		filter.Page = 1
 	}
-	if pageSize < 1 {
-		pageSize = 10
+	if filter.PageSize < 1 {
+		filter.PageSize = 10
 	}
-	if pageSize > 100 {
-		pageSize = 100
+	if filter.PageSize > 100 {
+		filter.PageSize = 100
 	}
 
-	warehouses, total, err := s.warehouseRepo.List(ctx, page, pageSize)
+	repoFilter := &repository.WarehouseFilter{
+		Name:     filter.Name,
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}
+
+	warehouses, total, err := s.warehouseRepo.List(ctx, repoFilter)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list warehouses")
 	}
