@@ -34,7 +34,7 @@ func TestCategoryRepository_GetByID_Query(t *testing.T) {
 
 func TestCategoryRepository_List_Query(t *testing.T) {
 	repo, _, ctx := setupCategoryTest(t)
-	_, _, err := repo.List(ctx, 1, 10, 0)
+	_, _, err := repo.List(ctx, &CategoryQueryFilter{Page: 1, PageSize: 10})
 	if err == nil {
 		t.Error("List() should return error with mock DB")
 	}

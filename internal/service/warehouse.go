@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 
 	"warehouse/internal/model"
-	"warehouse/internal/repository"
 	apperrors "warehouse/internal/pkg/errors"
+	"warehouse/internal/repository"
 )
 
 type WarehouseQueryFilter struct {
@@ -213,5 +213,3 @@ func (s *WarehouseService) Delete(ctx context.Context, id int64) error {
 
 	return nil
 }
-
-

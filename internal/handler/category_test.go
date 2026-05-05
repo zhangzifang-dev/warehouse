@@ -18,16 +18,16 @@ import (
 )
 
 type mockCategoryService struct {
-	listFunc    func(ctx context.Context, page, pageSize int, parentID int64) (*service.ListCategoriesResult, error)
+	listFunc    func(ctx context.Context, filter *service.CategoryQueryFilter) (*service.ListCategoriesResult, error)
 	getByIDFunc func(ctx context.Context, id int64) (*model.Category, error)
 	createFunc  func(ctx context.Context, input *service.CreateCategoryInput) (*model.Category, error)
 	updateFunc  func(ctx context.Context, id int64, input *service.UpdateCategoryInput) (*model.Category, error)
 	deleteFunc  func(ctx context.Context, id int64) error
 }
 
-func (m *mockCategoryService) List(ctx context.Context, page, pageSize int, parentID int64) (*service.ListCategoriesResult, error) {
+func (m *mockCategoryService) List(ctx context.Context, filter *service.CategoryQueryFilter) (*service.ListCategoriesResult, error) {
 	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize, parentID)
+		return m.listFunc(ctx, filter)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -77,6 +77,7 @@ func TestCategoryHandler_List(t *testing.T) {
 		queryParent   string
 		queryPage     string
 		querySize     string
+		queryName     string
 		wantStatus    int
 		wantTotal     int
 	}{
@@ -101,6 +102,16 @@ func TestCategoryHandler_List(t *testing.T) {
 			wantTotal:   1,
 		},
 		{
+			name: "success with name filter",
+			mockCategories: []model.Category{
+				{BaseModel: model.BaseModel{ID: 1}, Name: "Electronics"},
+			},
+			mockTotal:   1,
+			queryName:   "Electronics",
+			wantStatus:  http.StatusOK,
+			wantTotal:   1,
+		},
+		{
 			name:          "empty list",
 			mockCategories: []model.Category{},
 			mockTotal:     0,
@@ -117,7 +128,7 @@ func TestCategoryHandler_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router, handler, mockSvc := setupCategoryHandlerTest(t)
-			mockSvc.listFunc = func(ctx context.Context, page, pageSize int, parentID int64) (*service.ListCategoriesResult, error) {
+			mockSvc.listFunc = func(ctx context.Context, filter *service.CategoryQueryFilter) (*service.ListCategoriesResult, error) {
 				if tt.mockError != nil {
 					return nil, tt.mockError
 				}
@@ -129,7 +140,8 @@ func TestCategoryHandler_List(t *testing.T) {
 
 			router.GET("/categories", handler.List)
 
-			req := httptest.NewRequest("GET", "/categories?parent_id="+tt.queryParent+"&page="+tt.queryPage+"&size="+tt.querySize, nil)
+			url := "/categories?parent_id=" + tt.queryParent + "&page=" + tt.queryPage + "&size=" + tt.querySize + "&name=" + tt.queryName
+			req := httptest.NewRequest("GET", url, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 
@@ -372,4 +384,88 @@ func intPtr(i int) *int {
 
 func strPtrHandler(s string) *string {
 	return &s
+}
+
+func TestCategoryHandler_List_WithNameFilter(t *testing.T) {
+	var capturedFilter *service.CategoryQueryFilter
+	mockSvc := &mockCategoryService{
+		listFunc: func(ctx context.Context, filter *service.CategoryQueryFilter) (*service.ListCategoriesResult, error) {
+			capturedFilter = filter
+			return &service.ListCategoriesResult{
+				Categories: []model.Category{
+					{BaseModel: model.BaseModel{ID: 1}, Name: "Electronics"},
+				},
+				Total: 1,
+			}, nil
+		},
+	}
+
+	handler := NewCategoryHandler(mockSvc)
+	router, _, _ := setupCategoryHandlerTest(t)
+	router.GET("/categories", handler.List)
+
+	req := httptest.NewRequest("GET", "/categories?name=Electronics&page=1&size=10", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.NotNil(t, capturedFilter)
+	assert.Equal(t, "Electronics", capturedFilter.Name)
+	assert.Equal(t, 1, capturedFilter.Page)
+	assert.Equal(t, 10, capturedFilter.PageSize)
+}
+
+func TestCategoryHandler_List_WithSpecialCharacters(t *testing.T) {
+	var capturedFilter *service.CategoryQueryFilter
+	mockSvc := &mockCategoryService{
+		listFunc: func(ctx context.Context, filter *service.CategoryQueryFilter) (*service.ListCategoriesResult, error) {
+			capturedFilter = filter
+			return &service.ListCategoriesResult{
+				Categories: []model.Category{},
+				Total:      0,
+			}, nil
+		},
+	}
+
+	handler := NewCategoryHandler(mockSvc)
+	router, _, _ := setupCategoryHandlerTest(t)
+	router.GET("/categories", handler.List)
+
+	req := httptest.NewRequest("GET", "/categories?name=Test%20Category%26Special%2FChars&page=1&size=10", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.NotNil(t, capturedFilter)
+	assert.Equal(t, "Test Category&Special/Chars", capturedFilter.Name)
+}
+
+func TestCategoryHandler_List_WithEmptyFilter(t *testing.T) {
+	var capturedFilter *service.CategoryQueryFilter
+	mockSvc := &mockCategoryService{
+		listFunc: func(ctx context.Context, filter *service.CategoryQueryFilter) (*service.ListCategoriesResult, error) {
+			capturedFilter = filter
+			return &service.ListCategoriesResult{
+				Categories: []model.Category{
+					{BaseModel: model.BaseModel{ID: 1}, Name: "Electronics"},
+					{BaseModel: model.BaseModel{ID: 2}, Name: "Clothing"},
+				},
+				Total: 2,
+			}, nil
+		},
+	}
+
+	handler := NewCategoryHandler(mockSvc)
+	router, _, _ := setupCategoryHandlerTest(t)
+	router.GET("/categories", handler.List)
+
+	req := httptest.NewRequest("GET", "/categories?page=1&size=10", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.NotNil(t, capturedFilter)
+	assert.Equal(t, "", capturedFilter.Name)
+	assert.Equal(t, 1, capturedFilter.Page)
+	assert.Equal(t, 10, capturedFilter.PageSize)
 }

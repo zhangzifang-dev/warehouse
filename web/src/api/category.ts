@@ -2,10 +2,22 @@ import api from './client'
 import type { Category, CreateCategoryRequest, UpdateCategoryRequest } from '../types/product'
 import type { PaginatedResponse } from '../types/warehouse'
 
+export interface CategoryFilter {
+  name?: string
+}
+
 export const categoryApi = {
-  list: async (page = 1, size = 10): Promise<PaginatedResponse<Category>> => {
+  list: async (page = 1, size = 10, filter?: CategoryFilter): Promise<PaginatedResponse<Category>> => {
+    const params = new URLSearchParams()
+    params.append('page', String(page))
+    params.append('size', String(size))
+    
+    if (filter?.name) {
+      params.append('name', filter.name)
+    }
+    
     const response = await api.get<PaginatedResponse<Category>>('/categories', {
-      params: { page, size }
+      params: params
     })
     return response.data
   },

@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"warehouse/internal/model"
+	"warehouse/internal/repository"
 )
 
 type mockCategoryRepository struct {
 	createFunc      func(ctx context.Context, category *model.Category) error
 	getByIDFunc     func(ctx context.Context, id int64) (*model.Category, error)
-	listFunc        func(ctx context.Context, page, pageSize int, parentID int64) ([]model.Category, int, error)
+	listFunc        func(ctx context.Context, filter *repository.CategoryQueryFilter) ([]model.Category, int, error)
 	updateFunc      func(ctx context.Context, category *model.Category) error
 	deleteFunc      func(ctx context.Context, id int64) error
 	hasChildrenFunc func(ctx context.Context, id int64) (bool, error)
@@ -31,9 +32,9 @@ func (m *mockCategoryRepository) GetByID(ctx context.Context, id int64) (*model.
 	return nil, errors.New("not implemented")
 }
 
-func (m *mockCategoryRepository) List(ctx context.Context, page, pageSize int, parentID int64) ([]model.Category, int, error) {
+func (m *mockCategoryRepository) List(ctx context.Context, filter *repository.CategoryQueryFilter) ([]model.Category, int, error) {
 	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize, parentID)
+		return m.listFunc(ctx, filter)
 	}
 	return nil, 0, errors.New("not implemented")
 }
@@ -69,7 +70,7 @@ func TestCategoryService_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 	input := &CreateCategoryInput{
 		Name:      "Electronics",
 		ParentID:  0,
@@ -92,7 +93,7 @@ func TestCategoryService_Create_Success(t *testing.T) {
 func TestCategoryService_Create_EmptyName(t *testing.T) {
 	mockRepo := &mockCategoryRepository{}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 	input := &CreateCategoryInput{
 		Name: "",
 	}
@@ -111,7 +112,7 @@ func TestCategoryService_Create_DefaultStatus(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 	input := &CreateCategoryInput{
 		Name: "Electronics",
 	}
@@ -136,7 +137,7 @@ func TestCategoryService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 
 	category, err := svc.GetByID(context.Background(), 1)
 
@@ -158,7 +159,7 @@ func TestCategoryService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -169,7 +170,7 @@ func TestCategoryService_GetByID_NotFound(t *testing.T) {
 
 func TestCategoryService_List_Success(t *testing.T) {
 	mockRepo := &mockCategoryRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, parentID int64) ([]model.Category, int, error) {
+		listFunc: func(ctx context.Context, filter *repository.CategoryQueryFilter) ([]model.Category, int, error) {
 			return []model.Category{
 				{BaseModel: model.BaseModel{ID: 1}, Name: "Electronics"},
 				{BaseModel: model.BaseModel{ID: 2}, Name: "Clothing"},
@@ -177,9 +178,9 @@ func TestCategoryService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 
-	result, err := svc.List(context.Background(), 1, 10, 0)
+	result, err := svc.List(context.Background(), &CategoryQueryFilter{Page: 1, PageSize: 10})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -194,20 +195,20 @@ func TestCategoryService_List_Success(t *testing.T) {
 
 func TestCategoryService_List_DefaultPagination(t *testing.T) {
 	mockRepo := &mockCategoryRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, parentID int64) ([]model.Category, int, error) {
-			if page != 1 {
-				t.Errorf("expected page 1, got %d", page)
+		listFunc: func(ctx context.Context, filter *repository.CategoryQueryFilter) ([]model.Category, int, error) {
+			if filter.Page != 1 {
+				t.Errorf("expected page 1, got %d", filter.Page)
 			}
-			if pageSize != 10 {
-				t.Errorf("expected pageSize 10, got %d", pageSize)
+			if filter.PageSize != 10 {
+				t.Errorf("expected pageSize 10, got %d", filter.PageSize)
 			}
 			return []model.Category{}, 0, nil
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 
-	_, err := svc.List(context.Background(), 0, 0, 0)
+	_, err := svc.List(context.Background(), &CategoryQueryFilter{Page: 0, PageSize: 0})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -230,7 +231,7 @@ func TestCategoryService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 	newSortOrder := 2
 	input := &UpdateCategoryInput{
 		Name:      strPtr("Computers"),
@@ -265,7 +266,7 @@ func TestCategoryService_Update_Status(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 	input := &UpdateCategoryInput{
 		Status: &newStatus,
 	}
@@ -287,7 +288,7 @@ func TestCategoryService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 	input := &UpdateCategoryInput{Name: strPtr("Updated")}
 
 	_, err := svc.Update(context.Background(), 999, input)
@@ -310,7 +311,7 @@ func TestCategoryService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -329,7 +330,7 @@ func TestCategoryService_Delete_HasChildren(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -345,7 +346,7 @@ func TestCategoryService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewCategoryService(mockRepo)
+	svc := NewCategoryService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 999)
 

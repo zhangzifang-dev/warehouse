@@ -6,12 +6,19 @@ import (
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
+	"warehouse/internal/repository"
 )
+
+type CategoryQueryFilter struct {
+	Name     string
+	Page     int
+	PageSize int
+}
 
 type CategoryRepository interface {
 	Create(ctx context.Context, category *model.Category) error
 	GetByID(ctx context.Context, id int64) (*model.Category, error)
-	List(ctx context.Context, page, pageSize int, parentID int64) ([]model.Category, int, error)
+	List(ctx context.Context, filter *repository.CategoryQueryFilter) ([]model.Category, int, error)
 	Update(ctx context.Context, category *model.Category) error
 	Delete(ctx context.Context, id int64) error
 	HasChildren(ctx context.Context, id int64) (bool, error)
@@ -92,18 +99,24 @@ func (s *CategoryService) GetByID(ctx context.Context, id int64) (*model.Categor
 	return category, nil
 }
 
-func (s *CategoryService) List(ctx context.Context, page, pageSize int, parentID int64) (*ListCategoriesResult, error) {
-	if page < 1 {
-		page = 1
+func (s *CategoryService) List(ctx context.Context, filter *CategoryQueryFilter) (*ListCategoriesResult, error) {
+	if filter.Page < 1 {
+		filter.Page = 1
 	}
-	if pageSize < 1 {
-		pageSize = 10
+	if filter.PageSize < 1 {
+		filter.PageSize = 10
 	}
-	if pageSize > 100 {
-		pageSize = 100
+	if filter.PageSize > 100 {
+		filter.PageSize = 100
 	}
 
-	categories, total, err := s.categoryRepo.List(ctx, page, pageSize, parentID)
+	repoFilter := &repository.CategoryQueryFilter{
+		Name:     filter.Name,
+		Page:     filter.Page,
+		PageSize: filter.PageSize,
+	}
+
+	categories, total, err := s.categoryRepo.List(ctx, repoFilter)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list categories")
 	}

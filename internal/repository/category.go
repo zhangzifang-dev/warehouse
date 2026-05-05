@@ -16,6 +16,12 @@ func NewCategoryRepository(db *bun.DB) *CategoryRepository {
 	return &CategoryRepository{db: db}
 }
 
+type CategoryQueryFilter struct {
+	Name     string
+	Page     int
+	PageSize int
+}
+
 func (r *CategoryRepository) Create(ctx context.Context, category *model.Category) error {
 	_, err := r.db.NewInsert().Model(category).Exec(ctx)
 	return err
@@ -34,20 +40,21 @@ func (r *CategoryRepository) GetByID(ctx context.Context, id int64) (*model.Cate
 	return category, nil
 }
 
-func (r *CategoryRepository) List(ctx context.Context, page, pageSize int, parentID int64) ([]model.Category, int, error) {
+func (r *CategoryRepository) List(ctx context.Context, filter *CategoryQueryFilter) ([]model.Category, int, error) {
 	var categories []model.Category
-	query := r.db.NewSelect().
+
+	q := r.db.NewSelect().
 		Model(&categories).
 		Where("deleted_at IS NULL")
 
-	if parentID > 0 {
-		query = query.Where("parent_id = ?", parentID)
+	if filter.Name != "" {
+		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
 	}
 
-	total, err := query.
+	total, err := q.
 		Order("sort_order ASC, id ASC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
+		Offset((filter.Page - 1) * filter.PageSize).
+		Limit(filter.PageSize).
 		ScanAndCount(ctx)
 	if err != nil {
 		return nil, 0, err
@@ -56,7 +63,11 @@ func (r *CategoryRepository) List(ctx context.Context, page, pageSize int, paren
 }
 
 func (r *CategoryRepository) ListByParent(ctx context.Context, parentID int64, page, pageSize int) ([]model.Category, int, error) {
-	return r.List(ctx, page, pageSize, parentID)
+	filter := &CategoryQueryFilter{
+		Page:     page,
+		PageSize: pageSize,
+	}
+	return r.List(ctx, filter)
 }
 
 func (r *CategoryRepository) Update(ctx context.Context, category *model.Category) error {
