@@ -102,9 +102,11 @@ func (h *CategoryHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
 	name := c.Query("name")
+	parentID, _ := strconv.ParseInt(c.Query("parent_id"), 10, 64)
 
 	filter := &service.CategoryQueryFilter{
 		Name:     name,
+		ParentID: parentID,
 		Page:     page,
 		PageSize: pageSize,
 	}

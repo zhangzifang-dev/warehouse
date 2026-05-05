@@ -11,6 +11,7 @@ import (
 
 type CategoryQueryFilter struct {
 	Name     string
+	ParentID int64
 	Page     int
 	PageSize int
 }
@@ -109,9 +110,13 @@ func (s *CategoryService) List(ctx context.Context, filter *CategoryQueryFilter)
 	if filter.PageSize > 100 {
 		filter.PageSize = 100
 	}
+	if len(filter.Name) > 100 {
+		filter.Name = filter.Name[:100]
+	}
 
 	repoFilter := &repository.CategoryQueryFilter{
 		Name:     filter.Name,
+		ParentID: filter.ParentID,
 		Page:     filter.Page,
 		PageSize: filter.PageSize,
 	}

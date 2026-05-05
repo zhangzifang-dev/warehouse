@@ -16,7 +16,7 @@ export function CategoryList() {
   const [messageApi, contextHolder] = message.useMessage()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['categories', page, pageSize, filter],
+    queryKey: ['categories', page, pageSize, filter.name],
     queryFn: () => categoryApi.list(page, pageSize, filter)
   })
 

@@ -18,6 +18,7 @@ func NewCategoryRepository(db *bun.DB) *CategoryRepository {
 
 type CategoryQueryFilter struct {
 	Name     string
+	ParentID int64
 	Page     int
 	PageSize int
 }
@@ -51,6 +52,10 @@ func (r *CategoryRepository) List(ctx context.Context, filter *CategoryQueryFilt
 		q = q.Where("name LIKE ?", "%"+filter.Name+"%")
 	}
 
+	if filter.ParentID > 0 {
+		q = q.Where("parent_id = ?", filter.ParentID)
+	}
+
 	total, err := q.
 		Order("sort_order ASC, id ASC").
 		Offset((filter.Page - 1) * filter.PageSize).
@@ -64,6 +69,7 @@ func (r *CategoryRepository) List(ctx context.Context, filter *CategoryQueryFilt
 
 func (r *CategoryRepository) ListByParent(ctx context.Context, parentID int64, page, pageSize int) ([]model.Category, int, error) {
 	filter := &CategoryQueryFilter{
+		ParentID: parentID,
 		Page:     page,
 		PageSize: pageSize,
 	}
