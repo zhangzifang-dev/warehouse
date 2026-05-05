@@ -37,6 +37,10 @@ func (m *mockAuditLogRepository) List(ctx context.Context, filter *repository.Au
 	return nil, 0, errors.New("not implemented")
 }
 
+func (m *mockAuditLogRepository) GetTableNames(ctx context.Context) ([]string, error) {
+	return []string{}, nil
+}
+
 func TestAuditLogService_Log_Success(t *testing.T) {
 	var createdLog *model.AuditLog
 	mockRepo := &mockAuditLogRepository{
@@ -232,7 +236,7 @@ func TestAuditLogService_List_WithFilters(t *testing.T) {
 	endTime := time.Now()
 
 	_, err := svc.List(context.Background(), &AuditLogQueryFilter{
-		TableName:  "users",
+		TableName:  []string{"users"},
 		RecordID:   &recordID,
 		OperatedBy: &operatedBy,
 		StartTime:  &startTime,
@@ -244,8 +248,8 @@ func TestAuditLogService_List_WithFilters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
 	}
-	if capturedFilter.TableName != "users" {
-		t.Errorf("expected table_name 'users', got '%s'", capturedFilter.TableName)
+	if len(capturedFilter.TableName) != 1 || capturedFilter.TableName[0] != "users" {
+		t.Errorf("expected table_name ['users'], got '%v'", capturedFilter.TableName)
 	}
 	if *capturedFilter.RecordID != recordID {
 		t.Errorf("expected record_id %d, got %d", recordID, *capturedFilter.RecordID)

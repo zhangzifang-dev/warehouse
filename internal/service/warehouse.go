@@ -9,7 +9,7 @@ import (
 	apperrors "warehouse/internal/pkg/errors"
 )
 
-type WarehouseFilter struct {
+type WarehouseQueryFilter struct {
 	Name     string
 	Page     int
 	PageSize int
@@ -19,7 +19,7 @@ type WarehouseRepository interface {
 	Create(ctx context.Context, warehouse *model.Warehouse) error
 	GetByID(ctx context.Context, id int64) (*model.Warehouse, error)
 	GetByCode(ctx context.Context, code string) (*model.Warehouse, error)
-	List(ctx context.Context, filter *repository.WarehouseFilter) ([]model.Warehouse, int, error)
+	List(ctx context.Context, filter *repository.WarehouseQueryFilter) ([]model.Warehouse, int, error)
 	Update(ctx context.Context, warehouse *model.Warehouse) error
 	Delete(ctx context.Context, id int64) error
 }
@@ -112,7 +112,7 @@ func (s *WarehouseService) GetByID(ctx context.Context, id int64) (*model.Wareho
 	return warehouse, nil
 }
 
-func (s *WarehouseService) List(ctx context.Context, filter *WarehouseFilter) (*ListWarehousesResult, error) {
+func (s *WarehouseService) List(ctx context.Context, filter *WarehouseQueryFilter) (*ListWarehousesResult, error) {
 	if filter.Page < 1 {
 		filter.Page = 1
 	}
@@ -123,7 +123,7 @@ func (s *WarehouseService) List(ctx context.Context, filter *WarehouseFilter) (*
 		filter.PageSize = 100
 	}
 
-	repoFilter := &repository.WarehouseFilter{
+	repoFilter := &repository.WarehouseQueryFilter{
 		Name:     filter.Name,
 		Page:     filter.Page,
 		PageSize: filter.PageSize,

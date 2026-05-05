@@ -16,7 +16,7 @@ func NewWarehouseRepository(db *bun.DB) *WarehouseRepository {
 	return &WarehouseRepository{db: db}
 }
 
-type WarehouseFilter struct {
+type WarehouseQueryFilter struct {
 	Name     string
 	Page     int
 	PageSize int
@@ -53,7 +53,7 @@ func (r *WarehouseRepository) GetByCode(ctx context.Context, code string) (*mode
 	return warehouse, nil
 }
 
-func (r *WarehouseRepository) List(ctx context.Context, filter *WarehouseFilter) ([]model.Warehouse, int, error) {
+func (r *WarehouseRepository) List(ctx context.Context, filter *WarehouseQueryFilter) ([]model.Warehouse, int, error) {
 	var warehouses []model.Warehouse
 
 	q := r.db.NewSelect().
@@ -93,5 +93,3 @@ func (r *WarehouseRepository) Delete(ctx context.Context, id int64) error {
 		Exec(ctx)
 	return err
 }
-
-

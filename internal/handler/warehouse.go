@@ -40,7 +40,7 @@ type WarehouseListResponse struct {
 type WarehouseService interface {
 	Create(ctx context.Context, input *service.CreateWarehouseInput) (*model.Warehouse, error)
 	GetByID(ctx context.Context, id int64) (*model.Warehouse, error)
-	List(ctx context.Context, filter *service.WarehouseFilter) (*service.ListWarehousesResult, error)
+	List(ctx context.Context, filter *service.WarehouseQueryFilter) (*service.ListWarehousesResult, error)
 	Update(ctx context.Context, id int64, input *service.UpdateWarehouseInput) (*model.Warehouse, error)
 	Delete(ctx context.Context, id int64) error
 }
@@ -105,7 +105,7 @@ func (h *WarehouseHandler) List(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
 	name := c.Query("name")
 
-	filter := &service.WarehouseFilter{
+	filter := &service.WarehouseQueryFilter{
 		Name:     name,
 		Page:     page,
 		PageSize: pageSize,
