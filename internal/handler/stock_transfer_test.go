@@ -147,7 +147,7 @@ func TestStockTransferHandler_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router, handler, mockSvc := setupStockTransferHandlerTest(t)
-			mockSvc.listFunc = func(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) (*service.ListStockTransfersResult, error) {
+			mockSvc.listWithFilterFunc = func(ctx context.Context, filter *model.StockTransferQueryFilter) (*service.ListStockTransfersResult, error) {
 				if tt.mockError != nil {
 					return nil, tt.mockError
 				}
