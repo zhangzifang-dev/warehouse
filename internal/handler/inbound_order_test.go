@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -18,17 +19,25 @@ import (
 )
 
 type mockInboundOrderService struct {
-	listFunc    func(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListInboundOrdersResult, error)
-	getByIDFunc func(ctx context.Context, id int64) (*model.InboundOrder, error)
-	createFunc  func(ctx context.Context, input *service.CreateInboundOrderInput) (*model.InboundOrder, error)
-	updateFunc  func(ctx context.Context, id int64, input *service.UpdateInboundOrderInput) (*model.InboundOrder, error)
-	deleteFunc  func(ctx context.Context, id int64) error
-	confirmFunc func(ctx context.Context, id int64) (*model.InboundOrder, error)
+	listFunc             func(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListInboundOrdersResult, error)
+	listWithFilterFunc   func(ctx context.Context, filter *model.InboundOrderQueryFilter) (*service.ListInboundOrdersResult, error)
+	getByIDFunc          func(ctx context.Context, id int64) (*model.InboundOrder, error)
+	createFunc           func(ctx context.Context, input *service.CreateInboundOrderInput) (*model.InboundOrder, error)
+	updateFunc           func(ctx context.Context, id int64, input *service.UpdateInboundOrderInput) (*model.InboundOrder, error)
+	deleteFunc           func(ctx context.Context, id int64) error
+	confirmFunc          func(ctx context.Context, id int64) (*model.InboundOrder, error)
 }
 
 func (m *mockInboundOrderService) List(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListInboundOrdersResult, error) {
 	if m.listFunc != nil {
 		return m.listFunc(ctx, page, pageSize, warehouseID, status)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (m *mockInboundOrderService) ListWithFilter(ctx context.Context, filter *model.InboundOrderQueryFilter) (*service.ListInboundOrdersResult, error) {
+	if m.listWithFilterFunc != nil {
+		return m.listWithFilterFunc(ctx, filter)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -107,7 +116,7 @@ func TestInboundOrderHandler_List(t *testing.T) {
 			mockTotal:      1,
 			queryWarehouse: "1",
 			wantStatus:     http.StatusOK,
-			wantTotal:      1,
+			wantTotal:       1,
 		},
 		{
 			name: "success with status filter",
@@ -136,9 +145,15 @@ func TestInboundOrderHandler_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router, handler, mockSvc := setupInboundOrderHandlerTest(t)
-			mockSvc.listFunc = func(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListInboundOrdersResult, error) {
+			mockSvc.listWithFilterFunc = func(ctx context.Context, filter *model.InboundOrderQueryFilter) (*service.ListInboundOrdersResult, error) {
 				if tt.mockError != nil {
 					return nil, tt.mockError
+				}
+				if tt.queryWarehouse != "" {
+					warehouseID := int64(1)
+					if filter.WarehouseID == nil || *filter.WarehouseID != warehouseID {
+						t.Errorf("expected WarehouseID %d", warehouseID)
+					}
 				}
 				return &service.ListInboundOrdersResult{
 					Orders: tt.mockOrders,
@@ -149,6 +164,88 @@ func TestInboundOrderHandler_List(t *testing.T) {
 			router.GET("/inbound-orders", handler.List)
 
 			req := httptest.NewRequest("GET", "/inbound-orders?warehouse_id="+tt.queryWarehouse+"&status="+tt.queryStatus+"&page="+tt.queryPage+"&size="+tt.querySize, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+			if tt.wantStatus == http.StatusOK {
+				var resp map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &resp)
+				assert.NoError(t, err)
+				data := resp["data"].(map[string]interface{})
+				assert.Equal(t, float64(tt.wantTotal), data["total"])
+			}
+		})
+	}
+}
+
+func TestInboundOrderHandler_ListWithFilter(t *testing.T) {
+	now := time.Now()
+	supplierID := int64(1)
+	warehouseID := int64(2)
+
+	tests := []struct {
+		name       string
+		query      string
+		mockResult *service.ListInboundOrdersResult
+		mockError  error
+		wantStatus int
+		wantTotal  int
+	}{
+		{
+			name:  "success with all filters",
+			query: "?order_no=PO-2024&supplier_id=1&warehouse_id=2&quantity_min=10&quantity_max=100&created_at_start=" + now.Format(time.RFC3339) + "&created_at_end=" + now.Add(24*time.Hour).Format(time.RFC3339),
+			mockResult: &service.ListInboundOrdersResult{
+				Orders: []model.InboundOrder{
+					{BaseModel: model.BaseModel{ID: 1}, OrderNo: "PO-2024-001"},
+				},
+				Total: 1,
+			},
+			wantStatus: http.StatusOK,
+			wantTotal:  1,
+		},
+		{
+			name:  "success with partial filters",
+			query: "?order_no=PO-2024&warehouse_id=2",
+			mockResult: &service.ListInboundOrdersResult{
+				Orders: []model.InboundOrder{
+					{BaseModel: model.BaseModel{ID: 1}, OrderNo: "PO-2024-001", WarehouseID: 2},
+				},
+				Total: 1,
+			},
+			wantStatus: http.StatusOK,
+			wantTotal:  1,
+		},
+		{
+			name:       "service error",
+			query:      "?order_no=PO-2024",
+			mockError:  apperrors.NewAppError(apperrors.CodeInternalError, "database error"),
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router, handler, mockSvc := setupInboundOrderHandlerTest(t)
+			mockSvc.listWithFilterFunc = func(ctx context.Context, filter *model.InboundOrderQueryFilter) (*service.ListInboundOrdersResult, error) {
+				if tt.mockError != nil {
+					return nil, tt.mockError
+				}
+				if filter.OrderNo != "" && filter.OrderNo != "PO-2024" {
+					t.Errorf("expected OrderNo 'PO-2024', got '%s'", filter.OrderNo)
+				}
+				if filter.SupplierID != nil && *filter.SupplierID != supplierID {
+					t.Errorf("expected SupplierID %d, got %d", supplierID, *filter.SupplierID)
+				}
+				if filter.WarehouseID != nil && *filter.WarehouseID != warehouseID {
+					t.Errorf("expected WarehouseID %d, got %d", warehouseID, *filter.WarehouseID)
+				}
+				return tt.mockResult, nil
+			}
+
+			router.GET("/inbound-orders", handler.List)
+
+			req := httptest.NewRequest("GET", "/inbound-orders"+tt.query, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 

@@ -72,6 +72,51 @@ func (r *InboundOrderRepository) List(ctx context.Context, page, pageSize int, w
 	return orders, total, nil
 }
 
+func (r *InboundOrderRepository) ListWithFilter(ctx context.Context, filter *model.InboundOrderQueryFilter) ([]model.InboundOrder, int, error) {
+	var orders []model.InboundOrder
+	q := r.db.NewSelect().
+		Model(&orders).
+		Where("deleted_at IS NULL")
+
+	if filter.OrderNo != "" {
+		q = q.Where("order_no LIKE ?", "%"+filter.OrderNo+"%")
+	}
+
+	if filter.SupplierID != nil {
+		q = q.Where("supplier_id = ?", *filter.SupplierID)
+	}
+
+	if filter.WarehouseID != nil {
+		q = q.Where("warehouse_id = ?", *filter.WarehouseID)
+	}
+
+	if filter.QuantityMin != nil {
+		q = q.Where("total_quantity >= ?", *filter.QuantityMin)
+	}
+
+	if filter.QuantityMax != nil {
+		q = q.Where("total_quantity <= ?", *filter.QuantityMax)
+	}
+
+	if filter.CreatedAtStart != nil {
+		q = q.Where("created_at >= ?", filter.CreatedAtStart)
+	}
+
+	if filter.CreatedAtEnd != nil {
+		q = q.Where("created_at <= ?", filter.CreatedAtEnd)
+	}
+
+	total, err := q.
+		Order("id DESC").
+		Offset((filter.Page - 1) * filter.PageSize).
+		Limit(filter.PageSize).
+		ScanAndCount(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	return orders, total, nil
+}
+
 func (r *InboundOrderRepository) Update(ctx context.Context, order *model.InboundOrder) error {
 	_, err := r.db.NewUpdate().
 		Model(order).

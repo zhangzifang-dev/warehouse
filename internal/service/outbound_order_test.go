@@ -105,7 +105,7 @@ func TestOutboundOrderService_Create_Success(t *testing.T) {
 	}
 	mockItemRepo := &mockOutboundItemRepository{}
 
-	svc := NewOutboundOrderService(mockOrderRepo, mockItemRepo, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, mockItemRepo, nil, nil)
 	input := &CreateOutboundOrderInput{
 		OrderNo:       "SO-2024-001",
 		WarehouseID:   1,
@@ -129,7 +129,7 @@ func TestOutboundOrderService_Create_MissingWarehouseID(t *testing.T) {
 	mockOrderRepo := &mockOutboundOrderRepository{}
 	mockItemRepo := &mockOutboundItemRepository{}
 
-	svc := NewOutboundOrderService(mockOrderRepo, mockItemRepo, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, mockItemRepo, nil, nil)
 	input := &CreateOutboundOrderInput{
 		OrderNo:       "SO-2024-001",
 		TotalQuantity: 100,
@@ -154,7 +154,7 @@ func TestOutboundOrderService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	order, err := svc.GetByID(context.Background(), 1)
 
@@ -176,7 +176,7 @@ func TestOutboundOrderService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -195,7 +195,7 @@ func TestOutboundOrderService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	result, err := svc.List(context.Background(), 1, 10, 0, 0)
 
@@ -228,7 +228,7 @@ func TestOutboundOrderService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
 	input := &UpdateOutboundOrderInput{
 		TotalQuantity: floatPtr(200),
 	}
@@ -253,7 +253,7 @@ func TestOutboundOrderService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -269,7 +269,7 @@ func TestOutboundOrderService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	err := svc.Delete(context.Background(), 999)
 
@@ -366,7 +366,7 @@ func TestOutboundOrderService_Confirm_AlreadyCompleted(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 
@@ -385,7 +385,7 @@ func TestOutboundOrderService_Confirm_AlreadyCancelled(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 
@@ -406,7 +406,7 @@ func TestOutboundOrderService_GetByOrderNo_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	order, err := svc.GetByOrderNo(context.Background(), "SO-2024-001")
 

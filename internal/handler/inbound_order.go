@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"warehouse/internal/model"
 	"warehouse/internal/pkg/response"
@@ -40,6 +41,7 @@ type InboundOrderService interface {
 	Create(ctx context.Context, input *service.CreateInboundOrderInput) (*model.InboundOrder, error)
 	GetByID(ctx context.Context, id int64) (*model.InboundOrder, error)
 	List(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListInboundOrdersResult, error)
+	ListWithFilter(ctx context.Context, filter *model.InboundOrderQueryFilter) (*service.ListInboundOrdersResult, error)
 	Update(ctx context.Context, id int64, input *service.UpdateInboundOrderInput) (*model.InboundOrder, error)
 	Delete(ctx context.Context, id int64) error
 	Confirm(ctx context.Context, id int64) (*model.InboundOrder, error)
@@ -98,10 +100,53 @@ func (h *InboundOrderHandler) GetByID(c *gin.Context) {
 func (h *InboundOrderHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
-	warehouseID, _ := strconv.ParseInt(c.Query("warehouse_id"), 10, 64)
-	status, _ := strconv.Atoi(c.Query("status"))
 
-	result, err := h.inboundOrderService.List(c.Request.Context(), page, pageSize, int(warehouseID), status)
+	filter := &model.InboundOrderQueryFilter{
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	if orderNo := c.Query("order_no"); orderNo != "" {
+		filter.OrderNo = orderNo
+	}
+
+	if supplierIDStr := c.Query("supplier_id"); supplierIDStr != "" {
+		if supplierID, err := strconv.ParseInt(supplierIDStr, 10, 64); err == nil {
+			filter.SupplierID = &supplierID
+		}
+	}
+
+	if warehouseIDStr := c.Query("warehouse_id"); warehouseIDStr != "" {
+		if warehouseID, err := strconv.ParseInt(warehouseIDStr, 10, 64); err == nil {
+			filter.WarehouseID = &warehouseID
+		}
+	}
+
+	if quantityMinStr := c.Query("quantity_min"); quantityMinStr != "" {
+		if quantityMin, err := strconv.ParseFloat(quantityMinStr, 64); err == nil {
+			filter.QuantityMin = &quantityMin
+		}
+	}
+
+	if quantityMaxStr := c.Query("quantity_max"); quantityMaxStr != "" {
+		if quantityMax, err := strconv.ParseFloat(quantityMaxStr, 64); err == nil {
+			filter.QuantityMax = &quantityMax
+		}
+	}
+
+	if createdAtStartStr := c.Query("created_at_start"); createdAtStartStr != "" {
+		if createdAtStart, err := time.Parse(time.RFC3339, createdAtStartStr); err == nil {
+			filter.CreatedAtStart = &createdAtStart
+		}
+	}
+
+	if createdAtEndStr := c.Query("created_at_end"); createdAtEndStr != "" {
+		if createdAtEnd, err := time.Parse(time.RFC3339, createdAtEndStr); err == nil {
+			filter.CreatedAtEnd = &createdAtEnd
+		}
+	}
+
+	result, err := h.inboundOrderService.ListWithFilter(c.Request.Context(), filter)
 	if err != nil {
 		handleInboundOrderError(c, err)
 		return

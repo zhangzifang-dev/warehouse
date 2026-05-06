@@ -1,5 +1,19 @@
 package model
 
+import "time"
+
+type InboundOrderQueryFilter struct {
+	OrderNo        string
+	SupplierID     *int64
+	WarehouseID    *int64
+	QuantityMin    *float64
+	QuantityMax    *float64
+	CreatedAtStart *time.Time
+	CreatedAtEnd   *time.Time
+	Page           int
+	PageSize       int
+}
+
 type InboundOrder struct {
 	BaseModel
 	OrderNo       string  `bun:"order_no,notnull,unique" json:"order_no"`

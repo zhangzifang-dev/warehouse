@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"warehouse/internal/model"
+	"warehouse/internal/repository"
 )
 
 type mockLocationRepository struct {
@@ -78,7 +79,7 @@ func (m *mockWarehouseRepoForLocation) GetByCode(ctx context.Context, code strin
 	return nil, errors.New("not implemented")
 }
 
-func (m *mockWarehouseRepoForLocation) List(ctx context.Context, page, pageSize int) ([]model.Warehouse, int, error) {
+func (m *mockWarehouseRepoForLocation) List(ctx context.Context, filter *repository.WarehouseQueryFilter) ([]model.Warehouse, int, error) {
 	return nil, 0, errors.New("not implemented")
 }
 
@@ -108,7 +109,7 @@ func TestLocationService_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, mockWhRepo)
+	svc := NewLocationService(mockLocRepo, mockWhRepo, nil)
 	input := &CreateLocationInput{
 		WarehouseID: 1,
 		Zone:        "A",
@@ -138,7 +139,7 @@ func TestLocationService_Create_WarehouseNotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, mockWhRepo)
+	svc := NewLocationService(mockLocRepo, mockWhRepo, nil)
 	input := &CreateLocationInput{
 		WarehouseID: 999,
 		Zone:        "A",
@@ -166,7 +167,7 @@ func TestLocationService_Create_DuplicateCode(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, mockWhRepo)
+	svc := NewLocationService(mockLocRepo, mockWhRepo, nil)
 	input := &CreateLocationInput{
 		WarehouseID: 1,
 		Zone:        "A",
@@ -197,7 +198,7 @@ func TestLocationService_Create_DefaultStatus(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, mockWhRepo)
+	svc := NewLocationService(mockLocRepo, mockWhRepo, nil)
 	input := &CreateLocationInput{
 		WarehouseID: 1,
 		Zone:        "A",
@@ -227,7 +228,7 @@ func TestLocationService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, nil)
+	svc := NewLocationService(mockLocRepo, nil, nil)
 
 	location, err := svc.GetByID(context.Background(), 1)
 
@@ -249,7 +250,7 @@ func TestLocationService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, nil)
+	svc := NewLocationService(mockLocRepo, nil, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -268,7 +269,7 @@ func TestLocationService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, nil)
+	svc := NewLocationService(mockLocRepo, nil, nil)
 
 	result, err := svc.List(context.Background(), 1, 10, 1)
 
@@ -296,7 +297,7 @@ func TestLocationService_List_DefaultPagination(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, nil)
+	svc := NewLocationService(mockLocRepo, nil, nil)
 
 	_, err := svc.List(context.Background(), 0, 0, 0)
 
@@ -325,7 +326,7 @@ func TestLocationService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, nil)
+	svc := NewLocationService(mockLocRepo, nil, nil)
 	input := &UpdateLocationInput{
 		Zone:     "B",
 		Shelf:    "02",
@@ -360,7 +361,7 @@ func TestLocationService_Update_Status(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, nil)
+	svc := NewLocationService(mockLocRepo, nil, nil)
 	input := &UpdateLocationInput{
 		Status: &newStatus,
 	}
@@ -382,7 +383,7 @@ func TestLocationService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, nil)
+	svc := NewLocationService(mockLocRepo, nil, nil)
 	input := &UpdateLocationInput{Zone: "B"}
 
 	_, err := svc.Update(context.Background(), 999, input)
@@ -402,7 +403,7 @@ func TestLocationService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, nil)
+	svc := NewLocationService(mockLocRepo, nil, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -418,7 +419,7 @@ func TestLocationService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewLocationService(mockLocRepo, nil)
+	svc := NewLocationService(mockLocRepo, nil, nil)
 
 	err := svc.Delete(context.Background(), 999)
 
