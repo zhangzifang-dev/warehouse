@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { Table, Button, Space, Drawer, Descriptions, Tag, message, Popconfirm } from 'antd'
-import { EyeOutlined, CheckOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Table, Button, Space, Drawer, Descriptions, Tag, message, Popconfirm, Input, Select, DatePicker, Form, Row, Col, Card } from 'antd'
+import { EyeOutlined, CheckOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { transferApi } from '../../api/transfer'
+import { transferApi, type StockTransferFilter } from '../../api/transfer'
 import { warehouseApi } from '../../api/warehouse'
 import { productApi } from '../../api/product'
 import type { StockTransfer } from '../../types/order'
+
+const { RangePicker } = DatePicker
 
 const statusMap: Record<number, { text: string; color: string }> = {
   0: { text: '待确认', color: 'orange' },
@@ -20,10 +22,12 @@ export function StockTransferList() {
   const [selectedOrder, setSelectedOrder] = useState<StockTransfer | null>(null)
   const queryClient = useQueryClient()
   const [messageApi, contextHolder] = message.useMessage()
+  const [filter, setFilter] = useState<StockTransferFilter>({})
+  const [form] = Form.useForm()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['stock-transfers', page, pageSize],
-    queryFn: () => transferApi.list(page, pageSize)
+    queryKey: ['stock-transfers', page, pageSize, filter],
+    queryFn: () => transferApi.list(page, pageSize, filter)
   })
 
   const { data: warehouses } = useQuery({
@@ -58,6 +62,28 @@ export function StockTransferList() {
     const order = await transferApi.get(id)
     setSelectedOrder(order)
     setDrawerOpen(true)
+  }
+
+  const handleSearch = () => {
+    const values = form.getFieldsValue()
+    const newFilter: StockTransferFilter = {}
+    
+    if (values.order_no) newFilter.order_no = values.order_no
+    if (values.source_warehouse_id) newFilter.source_warehouse_id = values.source_warehouse_id
+    if (values.target_warehouse_id) newFilter.target_warehouse_id = values.target_warehouse_id
+    if (values.created_at_range && values.created_at_range[0] && values.created_at_range[1]) {
+      newFilter.created_at_start = values.created_at_range[0].format('YYYY-MM-DDTHH:mm:ssZ')
+      newFilter.created_at_end = values.created_at_range[1].format('YYYY-MM-DDTHH:mm:ssZ')
+    }
+    
+    setFilter(newFilter)
+    setPage(1)
+  }
+
+  const handleReset = () => {
+    form.resetFields()
+    setFilter({})
+    setPage(1)
   }
 
   const columns = [
@@ -121,6 +147,66 @@ export function StockTransferList() {
   return (
     <>
       {contextHolder}
+      <Card style={{ marginBottom: 16 }}>
+        <Form form={form} layout="inline">
+          <Row gutter={16}>
+            <Col>
+              <Form.Item name="order_no" label="订单编号">
+                <Input placeholder="输入订单编号" style={{ width: 150 }} allowClear />
+              </Form.Item>
+            </Col>
+            <Col>
+              <Form.Item name="source_warehouse_id" label="调出仓库">
+                <Select
+                  placeholder="选择调出仓库"
+                  style={{ width: 150 }}
+                  allowClear
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={warehouses?.items.map((w: { id: number; name: string }) => ({
+                    label: w.name,
+                    value: w.id
+                  }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col>
+              <Form.Item name="target_warehouse_id" label="调入仓库">
+                <Select
+                  placeholder="选择调入仓库"
+                  style={{ width: 150 }}
+                  allowClear
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={warehouses?.items.map((w: { id: number; name: string }) => ({
+                    label: w.name,
+                    value: w.id
+                  }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col>
+              <Form.Item name="created_at_range" label="创建时间">
+                <RangePicker showTime style={{ width: 350 }} />
+              </Form.Item>
+            </Col>
+            <Col>
+              <Space>
+                <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+                  搜索
+                </Button>
+                <Button icon={<ReloadOutlined />} onClick={handleReset}>
+                  重置
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+        </Form>
+      </Card>
       <Table
         columns={columns}
         dataSource={data?.items}

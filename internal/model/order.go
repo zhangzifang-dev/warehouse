@@ -81,6 +81,16 @@ func (i *OutboundItem) TableName() string {
 	return "outbound_items"
 }
 
+type StockTransferQueryFilter struct {
+	OrderNo           string
+	SourceWarehouseID *int64
+	TargetWarehouseID *int64
+	CreatedAtStart    *time.Time
+	CreatedAtEnd      *time.Time
+	Page              int
+	PageSize          int
+}
+
 type StockTransfer struct {
 	BaseModel
 	OrderNo           string `bun:"order_no,notnull,unique" json:"order_no"`

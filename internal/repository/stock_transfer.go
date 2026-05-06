@@ -73,6 +73,43 @@ func (r *StockTransferRepository) List(ctx context.Context, page, pageSize int, 
 	return transfers, total, nil
 }
 
+func (r *StockTransferRepository) ListWithFilter(ctx context.Context, filter *model.StockTransferQueryFilter) ([]model.StockTransfer, int, error) {
+	var transfers []model.StockTransfer
+	q := r.db.NewSelect().
+		Model(&transfers).
+		Where("deleted_at IS NULL")
+
+	if filter.OrderNo != "" {
+		q = q.Where("order_no LIKE ?", "%"+filter.OrderNo+"%")
+	}
+
+	if filter.SourceWarehouseID != nil {
+		q = q.Where("source_warehouse_id = ?", *filter.SourceWarehouseID)
+	}
+
+	if filter.TargetWarehouseID != nil {
+		q = q.Where("target_warehouse_id = ?", *filter.TargetWarehouseID)
+	}
+
+	if filter.CreatedAtStart != nil {
+		q = q.Where("created_at >= ?", filter.CreatedAtStart)
+	}
+
+	if filter.CreatedAtEnd != nil {
+		q = q.Where("created_at <= ?", filter.CreatedAtEnd)
+	}
+
+	total, err := q.
+		Order("id DESC").
+		Offset((filter.Page - 1) * filter.PageSize).
+		Limit(filter.PageSize).
+		ScanAndCount(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	return transfers, total, nil
+}
+
 func (r *StockTransferRepository) Update(ctx context.Context, transfer *model.StockTransfer) error {
 	_, err := r.db.NewUpdate().
 		Model(transfer).

@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"warehouse/internal/model"
 	"warehouse/internal/pkg/response"
@@ -40,6 +41,7 @@ type StockTransferService interface {
 	Create(ctx context.Context, input *service.CreateStockTransferInput) (*model.StockTransfer, error)
 	GetByID(ctx context.Context, id int64) (*model.StockTransfer, error)
 	List(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) (*service.ListStockTransfersResult, error)
+	ListWithFilter(ctx context.Context, filter *model.StockTransferQueryFilter) (*service.ListStockTransfersResult, error)
 	Update(ctx context.Context, id int64, input *service.UpdateStockTransferInput) (*model.StockTransfer, error)
 	Delete(ctx context.Context, id int64) error
 	Confirm(ctx context.Context, id int64) (*model.StockTransfer, error)
@@ -98,15 +100,41 @@ func (h *StockTransferHandler) GetByID(c *gin.Context) {
 func (h *StockTransferHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
-	fromWarehouseID, _ := strconv.ParseInt(c.Query("from_warehouse_id"), 10, 64)
-	toWarehouseID, _ := strconv.ParseInt(c.Query("to_warehouse_id"), 10, 64)
-	
-	status := -1
-	if c.Query("status") != "" {
-		status, _ = strconv.Atoi(c.Query("status"))
+
+	filter := &model.StockTransferQueryFilter{
+		Page:     page,
+		PageSize: pageSize,
 	}
 
-	result, err := h.stockTransferService.List(c.Request.Context(), page, pageSize, int(fromWarehouseID), int(toWarehouseID), status)
+	if orderNo := c.Query("order_no"); orderNo != "" {
+		filter.OrderNo = orderNo
+	}
+
+	if sourceWarehouseIDStr := c.Query("source_warehouse_id"); sourceWarehouseIDStr != "" {
+		if sourceWarehouseID, err := strconv.ParseInt(sourceWarehouseIDStr, 10, 64); err == nil {
+			filter.SourceWarehouseID = &sourceWarehouseID
+		}
+	}
+
+	if targetWarehouseIDStr := c.Query("target_warehouse_id"); targetWarehouseIDStr != "" {
+		if targetWarehouseID, err := strconv.ParseInt(targetWarehouseIDStr, 10, 64); err == nil {
+			filter.TargetWarehouseID = &targetWarehouseID
+		}
+	}
+
+	if createdAtStartStr := c.Query("created_at_start"); createdAtStartStr != "" {
+		if createdAtStart, err := time.Parse(time.RFC3339, createdAtStartStr); err == nil {
+			filter.CreatedAtStart = &createdAtStart
+		}
+	}
+
+	if createdAtEndStr := c.Query("created_at_end"); createdAtEndStr != "" {
+		if createdAtEnd, err := time.Parse(time.RFC3339, createdAtEndStr); err == nil {
+			filter.CreatedAtEnd = &createdAtEnd
+		}
+	}
+
+	result, err := h.stockTransferService.ListWithFilter(c.Request.Context(), filter)
 	if err != nil {
 		handleStockTransferError(c, err)
 		return

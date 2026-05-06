@@ -4,17 +4,19 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"warehouse/internal/model"
 )
 
 type mockStockTransferRepository struct {
-	createFunc       func(ctx context.Context, transfer *model.StockTransfer) error
-	getByIDFunc      func(ctx context.Context, id int64) (*model.StockTransfer, error)
-	getByOrderNoFunc func(ctx context.Context, orderNo string) (*model.StockTransfer, error)
-	listFunc         func(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) ([]model.StockTransfer, int, error)
-	updateFunc       func(ctx context.Context, transfer *model.StockTransfer) error
-	deleteFunc       func(ctx context.Context, id int64) error
+	createFunc          func(ctx context.Context, transfer *model.StockTransfer) error
+	getByIDFunc         func(ctx context.Context, id int64) (*model.StockTransfer, error)
+	getByOrderNoFunc    func(ctx context.Context, orderNo string) (*model.StockTransfer, error)
+	listFunc            func(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) ([]model.StockTransfer, int, error)
+	listWithFilterFunc  func(ctx context.Context, filter *model.StockTransferQueryFilter) ([]model.StockTransfer, int, error)
+	updateFunc          func(ctx context.Context, transfer *model.StockTransfer) error
+	deleteFunc          func(ctx context.Context, id int64) error
 }
 
 func (m *mockStockTransferRepository) Create(ctx context.Context, transfer *model.StockTransfer) error {
@@ -41,6 +43,13 @@ func (m *mockStockTransferRepository) GetByOrderNo(ctx context.Context, orderNo 
 func (m *mockStockTransferRepository) List(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) ([]model.StockTransfer, int, error) {
 	if m.listFunc != nil {
 		return m.listFunc(ctx, page, pageSize, fromWarehouseID, toWarehouseID, status)
+	}
+	return nil, 0, errors.New("not implemented")
+}
+
+func (m *mockStockTransferRepository) ListWithFilter(ctx context.Context, filter *model.StockTransferQueryFilter) ([]model.StockTransfer, int, error) {
+	if m.listWithFilterFunc != nil {
+		return m.listWithFilterFunc(ctx, filter)
 	}
 	return nil, 0, errors.New("not implemented")
 }
@@ -132,12 +141,11 @@ func TestStockTransferService_Create_Success(t *testing.T) {
 	}
 	mockItemRepo := &mockStockTransferItemRepository{}
 
-	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, nil)
+	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, nil, nil)
 	input := &CreateStockTransferInput{
 		OrderNo:         "ST-2024-001",
-		FromWarehouseID: 1,
-		ToWarehouseID:   2,
-		TotalQuantity:   100,
+		SourceWarehouseID: 1,
+		TargetWarehouseID:   2,
 	}
 
 	transfer, err := svc.Create(context.Background(), input)
@@ -153,15 +161,14 @@ func TestStockTransferService_Create_Success(t *testing.T) {
 	}
 }
 
-func TestStockTransferService_Create_MissingFromWarehouseID(t *testing.T) {
+func TestStockTransferService_Create_MissingSourceWarehouseID(t *testing.T) {
 	mockTransferRepo := &mockStockTransferRepository{}
 	mockItemRepo := &mockStockTransferItemRepository{}
 
-	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, nil)
+	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, nil, nil)
 	input := &CreateStockTransferInput{
 		OrderNo:         "ST-2024-001",
-		ToWarehouseID:   2,
-		TotalQuantity:   100,
+		TargetWarehouseID:   2,
 	}
 
 	_, err := svc.Create(context.Background(), input)
@@ -171,15 +178,14 @@ func TestStockTransferService_Create_MissingFromWarehouseID(t *testing.T) {
 	}
 }
 
-func TestStockTransferService_Create_MissingToWarehouseID(t *testing.T) {
+func TestStockTransferService_Create_MissingTargetWarehouseID(t *testing.T) {
 	mockTransferRepo := &mockStockTransferRepository{}
 	mockItemRepo := &mockStockTransferItemRepository{}
 
-	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, nil)
+	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, nil, nil)
 	input := &CreateStockTransferInput{
 		OrderNo:         "ST-2024-001",
-		FromWarehouseID: 1,
-		TotalQuantity:   100,
+		SourceWarehouseID: 1,
 	}
 
 	_, err := svc.Create(context.Background(), input)
@@ -193,12 +199,11 @@ func TestStockTransferService_Create_SameWarehouse(t *testing.T) {
 	mockTransferRepo := &mockStockTransferRepository{}
 	mockItemRepo := &mockStockTransferItemRepository{}
 
-	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, nil)
+	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, nil, nil)
 	input := &CreateStockTransferInput{
 		OrderNo:         "ST-2024-001",
-		FromWarehouseID: 1,
-		ToWarehouseID:   1,
-		TotalQuantity:   100,
+		SourceWarehouseID: 1,
+		TargetWarehouseID:   1,
 	}
 
 	_, err := svc.Create(context.Background(), input)
@@ -214,14 +219,13 @@ func TestStockTransferService_GetByID_Success(t *testing.T) {
 			return &model.StockTransfer{
 				BaseModel:       model.BaseModel{ID: id},
 				OrderNo:         "ST-2024-001",
-				FromWarehouseID: 1,
-				ToWarehouseID:   2,
-				TotalQuantity:   100,
+				SourceWarehouseID: 1,
+				TargetWarehouseID:   2,
 			}, nil
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 
 	transfer, err := svc.GetByID(context.Background(), 1)
 
@@ -230,9 +234,6 @@ func TestStockTransferService_GetByID_Success(t *testing.T) {
 	}
 	if transfer == nil {
 		t.Fatal("expected transfer, got nil")
-	}
-	if transfer.TotalQuantity != 100 {
-		t.Errorf("expected total quantity 100, got %f", transfer.TotalQuantity)
 	}
 }
 
@@ -243,7 +244,7 @@ func TestStockTransferService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -258,13 +259,13 @@ func TestStockTransferService_GetByOrderNo_Success(t *testing.T) {
 			return &model.StockTransfer{
 				BaseModel:       model.BaseModel{ID: 1},
 				OrderNo:         orderNo,
-				FromWarehouseID: 1,
-				ToWarehouseID:   2,
+				SourceWarehouseID: 1,
+				TargetWarehouseID:   2,
 			}, nil
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 
 	transfer, err := svc.GetByOrderNo(context.Background(), "ST-2024-001")
 
@@ -280,13 +281,13 @@ func TestStockTransferService_List_Success(t *testing.T) {
 	mockTransferRepo := &mockStockTransferRepository{
 		listFunc: func(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) ([]model.StockTransfer, int, error) {
 			return []model.StockTransfer{
-				{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", FromWarehouseID: 1, ToWarehouseID: 2, TotalQuantity: 100},
-				{BaseModel: model.BaseModel{ID: 2}, OrderNo: "ST-2024-002", FromWarehouseID: 1, ToWarehouseID: 3, TotalQuantity: 200},
+				{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", SourceWarehouseID: 1, TargetWarehouseID: 2},
+				{BaseModel: model.BaseModel{ID: 2}, OrderNo: "ST-2024-002", SourceWarehouseID: 1, TargetWarehouseID: 3},
 			}, 2, nil
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 
 	result, err := svc.List(context.Background(), 1, 10, 0, 0, 0)
 
@@ -302,15 +303,14 @@ func TestStockTransferService_List_Success(t *testing.T) {
 }
 
 func TestStockTransferService_Update_Success(t *testing.T) {
-	updatedTransfer := &model.StockTransfer{}
+	var updatedTransfer *model.StockTransfer
 	mockTransferRepo := &mockStockTransferRepository{
 		getByIDFunc: func(ctx context.Context, id int64) (*model.StockTransfer, error) {
 			return &model.StockTransfer{
 				BaseModel:       model.BaseModel{ID: id},
 				OrderNo:         "ST-2024-001",
-				FromWarehouseID: 1,
-				ToWarehouseID:   2,
-				TotalQuantity:   100,
+				SourceWarehouseID: 1,
+				TargetWarehouseID:   2,
 				Status:          0,
 			}, nil
 		},
@@ -320,9 +320,8 @@ func TestStockTransferService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 	input := &UpdateStockTransferInput{
-		TotalQuantity: floatPtrST(200),
 	}
 
 	_, err := svc.Update(context.Background(), 1, input)
@@ -330,25 +329,24 @@ func TestStockTransferService_Update_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
 	}
-	if updatedTransfer.TotalQuantity != 200 {
-		t.Errorf("expected total quantity 200, got %f", updatedTransfer.TotalQuantity)
+	if updatedTransfer == nil {
+		t.Error("expected updatedTransfer to be set")
 	}
 }
-
 func TestStockTransferService_Update_SameWarehouse(t *testing.T) {
 	mockTransferRepo := &mockStockTransferRepository{
 		getByIDFunc: func(ctx context.Context, id int64) (*model.StockTransfer, error) {
 			return &model.StockTransfer{
 				BaseModel:       model.BaseModel{ID: id},
-				FromWarehouseID: 1,
-				ToWarehouseID:   2,
+				SourceWarehouseID: 1,
+				TargetWarehouseID:   2,
 			}, nil
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 	input := &UpdateStockTransferInput{
-		ToWarehouseID: int64PtrST(1),
+		TargetWarehouseID: int64PtrST(1),
 	}
 
 	_, err := svc.Update(context.Background(), 1, input)
@@ -368,7 +366,7 @@ func TestStockTransferService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -384,7 +382,7 @@ func TestStockTransferService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 
 	err := svc.Delete(context.Background(), 999)
 
@@ -399,9 +397,8 @@ func TestStockTransferService_Confirm_Success(t *testing.T) {
 			return &model.StockTransfer{
 				BaseModel:       model.BaseModel{ID: id},
 				OrderNo:         "ST-2024-001",
-				FromWarehouseID: 1,
-				ToWarehouseID:   2,
-				TotalQuantity:   100,
+				SourceWarehouseID: 1,
+				TargetWarehouseID:   2,
 				Status:          0,
 			}, nil
 		},
@@ -429,7 +426,7 @@ func TestStockTransferService_Confirm_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, mockInventorySvc)
+	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, mockInventorySvc, nil)
 
 	transfer, err := svc.Confirm(context.Background(), 1)
 
@@ -451,7 +448,7 @@ func TestStockTransferService_Confirm_AlreadyCompleted(t *testing.T) {
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 
@@ -470,7 +467,7 @@ func TestStockTransferService_Confirm_AlreadyCancelled(t *testing.T) {
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, nil, nil)
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 
@@ -484,8 +481,8 @@ func TestStockTransferService_Confirm_InsufficientStock(t *testing.T) {
 		getByIDFunc: func(ctx context.Context, id int64) (*model.StockTransfer, error) {
 			return &model.StockTransfer{
 				BaseModel:       model.BaseModel{ID: id},
-				FromWarehouseID: 1,
-				ToWarehouseID:   2,
+				SourceWarehouseID: 1,
+				TargetWarehouseID:   2,
 				Status:          0,
 			}, nil
 		},
@@ -503,7 +500,7 @@ func TestStockTransferService_Confirm_InsufficientStock(t *testing.T) {
 		},
 	}
 
-	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, mockInventorySvc)
+	svc := NewStockTransferService(mockTransferRepo, mockItemRepo, mockInventorySvc, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 
@@ -518,4 +515,79 @@ func floatPtrST(f float64) *float64 {
 
 func int64PtrST(i int64) *int64 {
 	return &i
+}
+
+func TestStockTransferService_ListWithFilter(t *testing.T) {
+	sourceWarehouseID := int64(1)
+	targetWarehouseID := int64(2)
+	startTime := time.Now()
+	endTime := time.Now().Add(24 * time.Hour)
+
+	filter := &model.StockTransferQueryFilter{
+		OrderNo:           "ST-2024",
+		SourceWarehouseID: &sourceWarehouseID,
+		TargetWarehouseID: &targetWarehouseID,
+		CreatedAtStart:    &startTime,
+		CreatedAtEnd:      &endTime,
+		Page:              1,
+		PageSize:          10,
+	}
+
+	mockTransferRepo := &mockStockTransferRepository{
+		listWithFilterFunc: func(ctx context.Context, f *model.StockTransferQueryFilter) ([]model.StockTransfer, int, error) {
+			if f.OrderNo != "ST-2024" {
+				t.Errorf("expected OrderNo 'ST-2024', got '%s'", f.OrderNo)
+			}
+			if *f.SourceWarehouseID != 1 {
+				t.Errorf("expected SourceWarehouseID 1, got %d", *f.SourceWarehouseID)
+			}
+			if *f.TargetWarehouseID != 2 {
+				t.Errorf("expected TargetWarehouseID 2, got %d", *f.TargetWarehouseID)
+			}
+			return []model.StockTransfer{
+				{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", SourceWarehouseID: 1, TargetWarehouseID: 2},
+			}, 1, nil
+		},
+	}
+
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
+
+	result, err := svc.ListWithFilter(context.Background(), filter)
+
+	if err != nil {
+		t.Fatalf("ListWithFilter failed: %v", err)
+	}
+	if len(result.Transfers) != 1 {
+		t.Errorf("expected 1 transfer, got %d", len(result.Transfers))
+	}
+	if result.Total != 1 {
+		t.Errorf("expected total 1, got %d", result.Total)
+	}
+}
+
+func TestStockTransferService_ListWithFilter_Validation(t *testing.T) {
+	filter := &model.StockTransferQueryFilter{
+		Page:     0,
+		PageSize: 0,
+	}
+
+	mockTransferRepo := &mockStockTransferRepository{
+		listWithFilterFunc: func(ctx context.Context, f *model.StockTransferQueryFilter) ([]model.StockTransfer, int, error) {
+			if f.Page != 1 {
+				t.Errorf("expected Page 1, got %d", f.Page)
+			}
+			if f.PageSize != 10 {
+				t.Errorf("expected PageSize 10, got %d", f.PageSize)
+			}
+			return []model.StockTransfer{}, 0, nil
+		},
+	}
+
+	svc := NewStockTransferService(mockTransferRepo, nil, nil, nil)
+
+	_, err := svc.ListWithFilter(context.Background(), filter)
+
+	if err != nil {
+		t.Fatalf("ListWithFilter failed: %v", err)
+	}
 }
