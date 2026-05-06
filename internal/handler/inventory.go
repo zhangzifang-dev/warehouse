@@ -129,6 +129,13 @@ func (h *InventoryHandler) List(c *gin.Context) {
 		Page:     page,
 		PageSize: pageSize,
 	}
+	if warehouseID, err := strconv.ParseInt(c.Query("warehouse_id"), 10, 64); err == nil {
+		filter.WarehouseID = warehouseID
+	}
+
+	if productID, err := strconv.ParseInt(c.Query("product_id"), 10, 64); err == nil {
+		filter.ProductID = productID
+	}
 	
 	if productName := c.Query("product_name"); productName != "" {
 		filter.ProductName = productName

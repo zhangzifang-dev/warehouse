@@ -11,6 +11,8 @@ type Inventory struct {
 
 type InventoryQueryFilter struct {
 	ProductName string
+	ProductID   int64
+	WarehouseID int64
 	QuantityMin *float64
 	QuantityMax *float64
 	BatchNo     string

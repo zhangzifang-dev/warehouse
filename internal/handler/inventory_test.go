@@ -94,6 +94,8 @@ func TestInventoryHandler_List(t *testing.T) {
 		queryQuantityMin  string
 		queryQuantityMax  string
 		queryBatchNo      string
+		queryProductID    string
+		queryWarehouseID  string
 		queryPage         string
 		querySize         string
 		wantStatus        int
@@ -162,6 +164,26 @@ func TestInventoryHandler_List(t *testing.T) {
 			wantTotal:     1,
 		},
 		{
+			name: "success with product id filter",
+			mockInventories: []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, ProductID: 1, Quantity: 100},
+			},
+			mockTotal:       1,
+			queryProductID:  "1",
+			wantStatus:      http.StatusOK,
+			wantTotal:       1,
+		},
+		{
+			name: "success with warehouse id filter",
+			mockInventories: []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, WarehouseID: 1, Quantity: 100},
+			},
+			mockTotal:        1,
+			queryWarehouseID: "1",
+			wantStatus:       http.StatusOK,
+			wantTotal:        1,
+		},
+		{
 			name: "success with all filters",
 			mockInventories: []model.Inventory{
 				{BaseModel: model.BaseModel{ID: 1}, ProductID: 1, BatchNo: "BATCH001", Quantity: 100},
@@ -203,7 +225,7 @@ func TestInventoryHandler_List(t *testing.T) {
 
 			router.GET("/inventory", handler.List)
 
-			req := httptest.NewRequest("GET", "/inventory?product_name="+tt.queryProductName+"&quantity_min="+tt.queryQuantityMin+"&quantity_max="+tt.queryQuantityMax+"&batch_no="+tt.queryBatchNo+"&page="+tt.queryPage+"&size="+tt.querySize, nil)
+			req := httptest.NewRequest("GET", "/inventory?product_name="+tt.queryProductName+"&product_id="+tt.queryProductID+"&warehouse_id="+tt.queryWarehouseID+"&quantity_min="+tt.queryQuantityMin+"&quantity_max="+tt.queryQuantityMax+"&batch_no="+tt.queryBatchNo+"&page="+tt.queryPage+"&size="+tt.querySize, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 

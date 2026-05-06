@@ -42,6 +42,14 @@ func (r *InventoryRepository) List(ctx context.Context, filter *model.InventoryQ
 		Relation("Warehouse").
 		Where("inventory.deleted_at IS NULL")
 
+	if filter.ProductID > 0 {
+		q = q.Where("inventory.product_id = ?", filter.ProductID)
+	}
+
+	if filter.WarehouseID > 0 {
+		q = q.Where("inventory.warehouse_id = ?", filter.WarehouseID)
+	}
+
 	if filter.ProductName != "" {
 		q = q.Where("product.name LIKE ?", "%"+filter.ProductName+"%")
 	}

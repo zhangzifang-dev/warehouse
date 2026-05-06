@@ -140,3 +140,19 @@ func setupInventoryTest(t *testing.T) (*InventoryRepository, *bun.DB, context.Co
 	ctx := context.Background()
 	return repo, db, ctx
 }
+
+func TestInventoryRepository_List_WithProductID(t *testing.T) {
+	repo, _, ctx := setupInventoryTest(t)
+	_, _, err := repo.List(ctx, &model.InventoryQueryFilter{Page: 1, PageSize: 10, ProductID: 1})
+	if err == nil {
+		t.Error("List() should return error with mock DB")
+	}
+}
+
+func TestInventoryRepository_List_WithWarehouseID(t *testing.T) {
+	repo, _, ctx := setupInventoryTest(t)
+	_, _, err := repo.List(ctx, &model.InventoryQueryFilter{Page: 1, PageSize: 10, WarehouseID: 1})
+	if err == nil {
+		t.Error("List() should return error with mock DB")
+	}
+}

@@ -4,6 +4,8 @@ import type { PaginatedResponse } from '../types/warehouse'
 
 export interface InventoryFilter {
   product_name?: string
+  product_id?: number
+  warehouse_id?: number
   quantity_min?: number
   quantity_max?: number
   batch_no?: string
@@ -17,6 +19,8 @@ export const inventoryApi = {
     
     if (filter) {
       if (filter.product_name) params.append('product_name', filter.product_name)
+      if (filter.product_id !== undefined) params.append('product_id', String(filter.product_id))
+      if (filter.warehouse_id !== undefined) params.append('warehouse_id', String(filter.warehouse_id))
       if (filter.batch_no) params.append('batch_no', filter.batch_no)
       if (filter.quantity_min !== undefined) params.append('quantity_min', String(filter.quantity_min))
       if (filter.quantity_max !== undefined) params.append('quantity_max', String(filter.quantity_max))
