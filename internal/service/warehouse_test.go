@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"warehouse/internal/repository"
 
 	"warehouse/internal/model"
 )
@@ -12,7 +13,7 @@ type mockWarehouseRepository struct {
 	createFunc    func(ctx context.Context, warehouse *model.Warehouse) error
 	getByIDFunc   func(ctx context.Context, id int64) (*model.Warehouse, error)
 	getByCodeFunc func(ctx context.Context, code string) (*model.Warehouse, error)
-	listFunc      func(ctx context.Context, page, pageSize int) ([]model.Warehouse, int, error)
+	listFunc   func(ctx context.Context, filter *repository.WarehouseQueryFilter) ([]model.Warehouse, int, error)
 	updateFunc    func(ctx context.Context, warehouse *model.Warehouse) error
 	deleteFunc    func(ctx context.Context, id int64) error
 }
@@ -38,9 +39,9 @@ func (m *mockWarehouseRepository) GetByCode(ctx context.Context, code string) (*
 	return nil, errors.New("not implemented")
 }
 
-func (m *mockWarehouseRepository) List(ctx context.Context, page, pageSize int) ([]model.Warehouse, int, error) {
+func (m *mockWarehouseRepository) List(ctx context.Context, filter *repository.WarehouseQueryFilter) ([]model.Warehouse, int, error) {
 	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize)
+		return m.listFunc(ctx, filter)
 	}
 	return nil, 0, errors.New("not implemented")
 }
@@ -72,7 +73,7 @@ func TestWarehouseService_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 	input := &CreateWarehouseInput{
 		Name:    "Main Warehouse",
 		Code:    "WH001",
@@ -104,7 +105,7 @@ func TestWarehouseService_Create_DefaultStatus(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 	input := &CreateWarehouseInput{
 		Name: "Test Warehouse",
 		Code: "WH002",
@@ -127,7 +128,7 @@ func TestWarehouseService_Create_DuplicateCode(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 	input := &CreateWarehouseInput{
 		Name: "Test Warehouse",
 		Code: "WH001",
@@ -151,7 +152,7 @@ func TestWarehouseService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 
 	warehouse, err := svc.GetByID(context.Background(), 1)
 
@@ -173,7 +174,7 @@ func TestWarehouseService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -184,7 +185,7 @@ func TestWarehouseService_GetByID_NotFound(t *testing.T) {
 
 func TestWarehouseService_List_Success(t *testing.T) {
 	mockRepo := &mockWarehouseRepository{
-		listFunc: func(ctx context.Context, page, pageSize int) ([]model.Warehouse, int, error) {
+		listFunc: func(ctx context.Context, filter *repository.WarehouseQueryFilter) ([]model.Warehouse, int, error) {
 			return []model.Warehouse{
 				{BaseModel: model.BaseModel{ID: 1}, Name: "Warehouse 1", Code: "WH001"},
 				{BaseModel: model.BaseModel{ID: 2}, Name: "Warehouse 2", Code: "WH002"},
@@ -192,9 +193,9 @@ func TestWarehouseService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 
-	result, err := svc.List(context.Background(), 1, 10)
+	result, err := svc.List(context.Background(), &WarehouseQueryFilter{Page: 1, PageSize: 10})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -209,20 +210,20 @@ func TestWarehouseService_List_Success(t *testing.T) {
 
 func TestWarehouseService_List_DefaultPagination(t *testing.T) {
 	mockRepo := &mockWarehouseRepository{
-		listFunc: func(ctx context.Context, page, pageSize int) ([]model.Warehouse, int, error) {
-			if page != 1 {
-				t.Errorf("expected page 1, got %d", page)
+		listFunc: func(ctx context.Context, filter *repository.WarehouseQueryFilter) ([]model.Warehouse, int, error) {
+			if filter.Page != 1 {
+				t.Errorf("expected filter.Page 1, got %d", filter.Page)
 			}
-			if pageSize != 10 {
-				t.Errorf("expected pageSize 10, got %d", pageSize)
+			if filter.PageSize != 10 {
+				t.Errorf("expected filter.PageSize 10, got %d", filter.PageSize)
 			}
 			return []model.Warehouse{}, 0, nil
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 
-	_, err := svc.List(context.Background(), 0, 0)
+	_, err := svc.List(context.Background(), &WarehouseQueryFilter{Page: 0, PageSize: 0})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -231,17 +232,17 @@ func TestWarehouseService_List_DefaultPagination(t *testing.T) {
 
 func TestWarehouseService_List_MaxPageSize(t *testing.T) {
 	mockRepo := &mockWarehouseRepository{
-		listFunc: func(ctx context.Context, page, pageSize int) ([]model.Warehouse, int, error) {
-			if pageSize > 100 {
-				t.Errorf("expected pageSize <= 100, got %d", pageSize)
+		listFunc: func(ctx context.Context, filter *repository.WarehouseQueryFilter) ([]model.Warehouse, int, error) {
+			if filter.PageSize > 100 {
+				t.Errorf("expected filter.PageSize <= 100, got %d", filter.PageSize)
 			}
 			return []model.Warehouse{}, 0, nil
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 
-	_, err := svc.List(context.Background(), 1, 200)
+	_, err := svc.List(context.Background(), &WarehouseQueryFilter{Page: 1, PageSize: 200})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -264,7 +265,7 @@ func TestWarehouseService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 	input := &UpdateWarehouseInput{
 		Name:    "New Name",
 		Address: "New Address",
@@ -296,7 +297,7 @@ func TestWarehouseService_Update_Status(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 	input := &UpdateWarehouseInput{
 		Status: &newStatus,
 	}
@@ -318,7 +319,7 @@ func TestWarehouseService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 	input := &UpdateWarehouseInput{Name: "New Name"}
 
 	_, err := svc.Update(context.Background(), 999, input)
@@ -338,7 +339,7 @@ func TestWarehouseService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -354,7 +355,7 @@ func TestWarehouseService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewWarehouseService(mockRepo)
+	svc := NewWarehouseService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 999)
 

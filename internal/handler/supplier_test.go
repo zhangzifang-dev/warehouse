@@ -18,16 +18,16 @@ import (
 )
 
 type mockSupplierService struct {
-	listFunc    func(ctx context.Context, page, pageSize int, keyword string) (*service.ListSuppliersResult, error)
+	listFunc    func(ctx context.Context, filter *service.SupplierQueryFilter) (*service.ListSuppliersResult, error)
 	getByIDFunc func(ctx context.Context, id int64) (*model.Supplier, error)
 	createFunc  func(ctx context.Context, input *service.CreateSupplierInput) (*model.Supplier, error)
 	updateFunc  func(ctx context.Context, id int64, input *service.UpdateSupplierInput) (*model.Supplier, error)
 	deleteFunc  func(ctx context.Context, id int64) error
 }
 
-func (m *mockSupplierService) List(ctx context.Context, page, pageSize int, keyword string) (*service.ListSuppliersResult, error) {
+func (m *mockSupplierService) List(ctx context.Context, filter *service.SupplierQueryFilter) (*service.ListSuppliersResult, error) {
 	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize, keyword)
+		return m.listFunc(ctx, filter)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -117,7 +117,7 @@ func TestSupplierHandler_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router, handler, mockSvc := setupSupplierHandlerTest(t)
-			mockSvc.listFunc = func(ctx context.Context, page, pageSize int, keyword string) (*service.ListSuppliersResult, error) {
+			mockSvc.listFunc = func(ctx context.Context, filter *service.SupplierQueryFilter) (*service.ListSuppliersResult, error) {
 				if tt.mockError != nil {
 					return nil, tt.mockError
 				}
