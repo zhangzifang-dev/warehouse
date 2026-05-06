@@ -264,7 +264,7 @@ func TestRegisterAuditLogRoutes(t *testing.T) {
 	RegisterAuditLogRoutes(router.Group("/api"), handler)
 
 	routes := router.Routes()
-	if len(routes) != 2 {
-		t.Errorf("expected 2 routes, got %d", len(routes))
+	if len(routes) != 3 {
+		t.Errorf("expected 3 routes, got %d", len(routes))
 	}
 }
