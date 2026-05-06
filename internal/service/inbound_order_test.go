@@ -4,17 +4,19 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"warehouse/internal/model"
 )
 
 type mockInboundOrderRepository struct {
-	createFunc      func(ctx context.Context, order *model.InboundOrder) error
-	getByIDFunc     func(ctx context.Context, id int64) (*model.InboundOrder, error)
-	getByOrderNoFunc func(ctx context.Context, orderNo string) (*model.InboundOrder, error)
-	listFunc        func(ctx context.Context, page, pageSize int, warehouseID, status int) ([]model.InboundOrder, int, error)
-	updateFunc      func(ctx context.Context, order *model.InboundOrder) error
-	deleteFunc      func(ctx context.Context, id int64) error
+	createFunc           func(ctx context.Context, order *model.InboundOrder) error
+	getByIDFunc          func(ctx context.Context, id int64) (*model.InboundOrder, error)
+	getByOrderNoFunc     func(ctx context.Context, orderNo string) (*model.InboundOrder, error)
+	listFunc             func(ctx context.Context, page, pageSize int, warehouseID, status int) ([]model.InboundOrder, int, error)
+	listWithFilterFunc   func(ctx context.Context, filter *model.InboundOrderQueryFilter) ([]model.InboundOrder, int, error)
+	updateFunc           func(ctx context.Context, order *model.InboundOrder) error
+	deleteFunc           func(ctx context.Context, id int64) error
 }
 
 func (m *mockInboundOrderRepository) Create(ctx context.Context, order *model.InboundOrder) error {
@@ -41,6 +43,13 @@ func (m *mockInboundOrderRepository) GetByOrderNo(ctx context.Context, orderNo s
 func (m *mockInboundOrderRepository) List(ctx context.Context, page, pageSize int, warehouseID, status int) ([]model.InboundOrder, int, error) {
 	if m.listFunc != nil {
 		return m.listFunc(ctx, page, pageSize, warehouseID, status)
+	}
+	return nil, 0, errors.New("not implemented")
+}
+
+func (m *mockInboundOrderRepository) ListWithFilter(ctx context.Context, filter *model.InboundOrderQueryFilter) ([]model.InboundOrder, int, error) {
+	if m.listWithFilterFunc != nil {
+		return m.listWithFilterFunc(ctx, filter)
 	}
 	return nil, 0, errors.New("not implemented")
 }
@@ -105,7 +114,7 @@ func TestInboundOrderService_Create_Success(t *testing.T) {
 	}
 	mockItemRepo := &mockInboundItemRepository{}
 
-	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, nil)
+	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, nil, nil)
 	input := &CreateInboundOrderInput{
 		OrderNo:       "PO-2024-001",
 		WarehouseID:   1,
@@ -129,7 +138,7 @@ func TestInboundOrderService_Create_MissingWarehouseID(t *testing.T) {
 	mockOrderRepo := &mockInboundOrderRepository{}
 	mockItemRepo := &mockInboundItemRepository{}
 
-	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, nil)
+	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, nil, nil)
 	input := &CreateInboundOrderInput{
 		OrderNo:       "PO-2024-001",
 		TotalQuantity: 100,
@@ -154,7 +163,7 @@ func TestInboundOrderService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	order, err := svc.GetByID(context.Background(), 1)
 
@@ -176,7 +185,7 @@ func TestInboundOrderService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -195,7 +204,7 @@ func TestInboundOrderService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	result, err := svc.List(context.Background(), 1, 10, 0, 0)
 
@@ -207,6 +216,85 @@ func TestInboundOrderService_List_Success(t *testing.T) {
 	}
 	if result.Total != 2 {
 		t.Errorf("expected total 2, got %d", result.Total)
+	}
+}
+
+func TestInboundOrderService_ListWithFilter(t *testing.T) {
+	supplierID := int64(1)
+	warehouseID := int64(1)
+	quantityMin := 10.0
+	quantityMax := 100.0
+	startTime := time.Now()
+	endTime := time.Now().Add(24 * time.Hour)
+
+	filter := &model.InboundOrderQueryFilter{
+		OrderNo:        "PO-2024",
+		SupplierID:     &supplierID,
+		WarehouseID:    &warehouseID,
+		QuantityMin:    &quantityMin,
+		QuantityMax:    &quantityMax,
+		CreatedAtStart: &startTime,
+		CreatedAtEnd:   &endTime,
+		Page:           1,
+		PageSize:       10,
+	}
+
+	mockOrderRepo := &mockInboundOrderRepository{
+		listWithFilterFunc: func(ctx context.Context, f *model.InboundOrderQueryFilter) ([]model.InboundOrder, int, error) {
+			if f.OrderNo != "PO-2024" {
+				t.Errorf("expected OrderNo 'PO-2024', got '%s'", f.OrderNo)
+			}
+			if *f.SupplierID != 1 {
+				t.Errorf("expected SupplierID 1, got %d", *f.SupplierID)
+			}
+			if *f.WarehouseID != 1 {
+				t.Errorf("expected WarehouseID 1, got %d", *f.WarehouseID)
+			}
+			return []model.InboundOrder{
+				{BaseModel: model.BaseModel{ID: 1}, OrderNo: "PO-2024-001", SupplierID: 1, WarehouseID: 1, TotalQuantity: 50},
+			}, 1, nil
+		},
+	}
+
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
+
+	result, err := svc.ListWithFilter(context.Background(), filter)
+
+	if err != nil {
+		t.Fatalf("ListWithFilter failed: %v", err)
+	}
+	if len(result.Orders) != 1 {
+		t.Errorf("expected 1 order, got %d", len(result.Orders))
+	}
+	if result.Total != 1 {
+		t.Errorf("expected total 1, got %d", result.Total)
+	}
+}
+
+func TestInboundOrderService_ListWithFilter_Validation(t *testing.T) {
+	filter := &model.InboundOrderQueryFilter{
+		Page:     0,
+		PageSize: 0,
+	}
+
+	mockOrderRepo := &mockInboundOrderRepository{
+		listWithFilterFunc: func(ctx context.Context, f *model.InboundOrderQueryFilter) ([]model.InboundOrder, int, error) {
+			if f.Page != 1 {
+				t.Errorf("expected Page 1, got %d", f.Page)
+			}
+			if f.PageSize != 10 {
+				t.Errorf("expected PageSize 10, got %d", f.PageSize)
+			}
+			return []model.InboundOrder{}, 0, nil
+		},
+	}
+
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
+
+	_, err := svc.ListWithFilter(context.Background(), filter)
+
+	if err != nil {
+		t.Fatalf("ListWithFilter failed: %v", err)
 	}
 }
 
@@ -228,7 +316,7 @@ func TestInboundOrderService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 	input := &UpdateInboundOrderInput{
 		TotalQuantity: floatPtr(200),
 	}
@@ -253,7 +341,7 @@ func TestInboundOrderService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -269,7 +357,7 @@ func TestInboundOrderService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	err := svc.Delete(context.Background(), 999)
 
@@ -307,7 +395,7 @@ func TestInboundOrderService_Confirm_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, mockInventorySvc)
+	svc := NewInboundOrderService(mockOrderRepo, mockItemRepo, mockInventorySvc, nil)
 
 	order, err := svc.Confirm(context.Background(), 1)
 
@@ -329,7 +417,7 @@ func TestInboundOrderService_Confirm_AlreadyCompleted(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 
@@ -348,7 +436,7 @@ func TestInboundOrderService_Confirm_AlreadyCancelled(t *testing.T) {
 		},
 	}
 
-	svc := NewInboundOrderService(mockOrderRepo, nil, nil)
+	svc := NewInboundOrderService(mockOrderRepo, nil, nil, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 

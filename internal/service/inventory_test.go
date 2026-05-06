@@ -12,7 +12,7 @@ import (
 type mockInventoryRepository struct {
 	createFunc                 func(ctx context.Context, inventory *model.Inventory) error
 	getByIDFunc                func(ctx context.Context, id int64) (*model.Inventory, error)
-	listFunc                   func(ctx context.Context, page, pageSize int, warehouseID, productID int64) ([]model.Inventory, int, error)
+	listFunc                   func(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error)
 	updateFunc                 func(ctx context.Context, inventory *model.Inventory) error
 	deleteFunc                 func(ctx context.Context, id int64) error
 	getByWarehouseAndProductFunc func(ctx context.Context, warehouseID, productID int64, batchNo string) (*model.Inventory, error)
@@ -33,9 +33,9 @@ func (m *mockInventoryRepository) GetByID(ctx context.Context, id int64) (*model
 	return nil, errors.New("not implemented")
 }
 
-func (m *mockInventoryRepository) List(ctx context.Context, page, pageSize int, warehouseID, productID int64) ([]model.Inventory, int, error) {
+func (m *mockInventoryRepository) List(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
 	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize, warehouseID, productID)
+		return m.listFunc(ctx, filter)
 	}
 	return nil, 0, errors.New("not implemented")
 }
@@ -78,7 +78,7 @@ func TestInventoryService_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &CreateInventoryInput{
 		WarehouseID: 1,
 		ProductID:   1,
@@ -105,7 +105,7 @@ func TestInventoryService_Create_Success(t *testing.T) {
 func TestInventoryService_Create_MissingWarehouseID(t *testing.T) {
 	mockRepo := &mockInventoryRepository{}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &CreateInventoryInput{
 		ProductID: 1,
 		Quantity:  100,
@@ -121,7 +121,7 @@ func TestInventoryService_Create_MissingWarehouseID(t *testing.T) {
 func TestInventoryService_Create_MissingProductID(t *testing.T) {
 	mockRepo := &mockInventoryRepository{}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &CreateInventoryInput{
 		WarehouseID: 1,
 		Quantity:    100,
@@ -146,7 +146,7 @@ func TestInventoryService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 
 	inventory, err := svc.GetByID(context.Background(), 1)
 
@@ -168,7 +168,7 @@ func TestInventoryService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -179,7 +179,7 @@ func TestInventoryService_GetByID_NotFound(t *testing.T) {
 
 func TestInventoryService_List_Success(t *testing.T) {
 	mockRepo := &mockInventoryRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, warehouseID, productID int64) ([]model.Inventory, int, error) {
+		listFunc: func(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
 			return []model.Inventory{
 				{BaseModel: model.BaseModel{ID: 1}, WarehouseID: 1, ProductID: 1, Quantity: 100},
 				{BaseModel: model.BaseModel{ID: 2}, WarehouseID: 1, ProductID: 2, Quantity: 200},
@@ -187,9 +187,9 @@ func TestInventoryService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 
-	result, err := svc.List(context.Background(), 1, 10, 0, 0)
+	result, err := svc.List(context.Background(), &model.InventoryQueryFilter{Page: 1, PageSize: 10})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -202,42 +202,173 @@ func TestInventoryService_List_Success(t *testing.T) {
 	}
 }
 
-func TestInventoryService_List_WithWarehouseID(t *testing.T) {
+func TestInventoryService_List_WithProductName(t *testing.T) {
 	mockRepo := &mockInventoryRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, warehouseID, productID int64) ([]model.Inventory, int, error) {
-			if warehouseID != 5 {
-				t.Errorf("expected warehouseID 5, got %d", warehouseID)
+		listFunc: func(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
+			if filter.ProductName != "测试商品" {
+				t.Errorf("expected ProductName '测试商品', got '%s'", filter.ProductName)
 			}
 			return []model.Inventory{
-				{BaseModel: model.BaseModel{ID: 1}, WarehouseID: warehouseID},
+				{BaseModel: model.BaseModel{ID: 1}, ProductID: 1, Quantity: 100},
 			}, 1, nil
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 
-	_, err := svc.List(context.Background(), 1, 10, 5, 0)
+	_, err := svc.List(context.Background(), &model.InventoryQueryFilter{
+		Page:        1,
+		PageSize:    10,
+		ProductName: "测试商品",
+	})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
 	}
 }
 
-func TestInventoryService_List_WithProductID(t *testing.T) {
+func TestInventoryService_List_WithQuantityMin(t *testing.T) {
 	mockRepo := &mockInventoryRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, warehouseID, productID int64) ([]model.Inventory, int, error) {
-			if productID != 3 {
-				t.Errorf("expected productID 3, got %d", productID)
+		listFunc: func(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
+			if filter.QuantityMin == nil || *filter.QuantityMin != 50 {
+				t.Errorf("expected QuantityMin 50, got %v", filter.QuantityMin)
 			}
 			return []model.Inventory{
-				{BaseModel: model.BaseModel{ID: 1}, ProductID: productID},
+				{BaseModel: model.BaseModel{ID: 1}, Quantity: 100},
 			}, 1, nil
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
+	minQty := 50.0
 
-	_, err := svc.List(context.Background(), 1, 10, 0, 3)
+	_, err := svc.List(context.Background(), &model.InventoryQueryFilter{
+		Page:        1,
+		PageSize:    10,
+		QuantityMin: &minQty,
+	})
+
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+}
+
+func TestInventoryService_List_WithQuantityMax(t *testing.T) {
+	mockRepo := &mockInventoryRepository{
+		listFunc: func(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
+			if filter.QuantityMax == nil || *filter.QuantityMax != 200 {
+				t.Errorf("expected QuantityMax 200, got %v", filter.QuantityMax)
+			}
+			return []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, Quantity: 100},
+			}, 1, nil
+		},
+	}
+
+	svc := NewInventoryService(mockRepo, nil)
+	maxQty := 200.0
+
+	_, err := svc.List(context.Background(), &model.InventoryQueryFilter{
+		Page:        1,
+		PageSize:    10,
+		QuantityMax: &maxQty,
+	})
+
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+}
+
+func TestInventoryService_List_WithQuantityRange(t *testing.T) {
+	mockRepo := &mockInventoryRepository{
+		listFunc: func(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
+			if filter.QuantityMin == nil || *filter.QuantityMin != 50 {
+				t.Errorf("expected QuantityMin 50, got %v", filter.QuantityMin)
+			}
+			if filter.QuantityMax == nil || *filter.QuantityMax != 200 {
+				t.Errorf("expected QuantityMax 200, got %v", filter.QuantityMax)
+			}
+			return []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, Quantity: 100},
+				{BaseModel: model.BaseModel{ID: 2}, Quantity: 150},
+			}, 2, nil
+		},
+	}
+
+	svc := NewInventoryService(mockRepo, nil)
+	minQty := 50.0
+	maxQty := 200.0
+
+	_, err := svc.List(context.Background(), &model.InventoryQueryFilter{
+		Page:        1,
+		PageSize:    10,
+		QuantityMin: &minQty,
+		QuantityMax: &maxQty,
+	})
+
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+}
+
+func TestInventoryService_List_WithBatchNo(t *testing.T) {
+	mockRepo := &mockInventoryRepository{
+		listFunc: func(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
+			if filter.BatchNo != "BATCH001" {
+				t.Errorf("expected BatchNo 'BATCH001', got '%s'", filter.BatchNo)
+			}
+			return []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, BatchNo: "BATCH001", Quantity: 100},
+			}, 1, nil
+		},
+	}
+
+	svc := NewInventoryService(mockRepo, nil)
+
+	_, err := svc.List(context.Background(), &model.InventoryQueryFilter{
+		Page:     1,
+		PageSize: 10,
+		BatchNo:  "BATCH001",
+	})
+
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+}
+
+func TestInventoryService_List_WithAllFilters(t *testing.T) {
+	mockRepo := &mockInventoryRepository{
+		listFunc: func(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
+			if filter.ProductName != "测试商品" {
+				t.Errorf("expected ProductName '测试商品', got '%s'", filter.ProductName)
+			}
+			if filter.QuantityMin == nil || *filter.QuantityMin != 50 {
+				t.Errorf("expected QuantityMin 50, got %v", filter.QuantityMin)
+			}
+			if filter.QuantityMax == nil || *filter.QuantityMax != 200 {
+				t.Errorf("expected QuantityMax 200, got %v", filter.QuantityMax)
+			}
+			if filter.BatchNo != "BATCH001" {
+				t.Errorf("expected BatchNo 'BATCH001', got '%s'", filter.BatchNo)
+			}
+			return []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, ProductID: 1, BatchNo: "BATCH001", Quantity: 100},
+			}, 1, nil
+		},
+	}
+
+	svc := NewInventoryService(mockRepo, nil)
+	minQty := 50.0
+	maxQty := 200.0
+
+	_, err := svc.List(context.Background(), &model.InventoryQueryFilter{
+		Page:        1,
+		PageSize:    10,
+		ProductName: "测试商品",
+		QuantityMin: &minQty,
+		QuantityMax: &maxQty,
+		BatchNo:     "BATCH001",
+	})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -246,20 +377,20 @@ func TestInventoryService_List_WithProductID(t *testing.T) {
 
 func TestInventoryService_List_DefaultPagination(t *testing.T) {
 	mockRepo := &mockInventoryRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, warehouseID, productID int64) ([]model.Inventory, int, error) {
-			if page != 1 {
-				t.Errorf("expected page 1, got %d", page)
+		listFunc: func(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
+			if filter.Page != 1 {
+				t.Errorf("expected page 1, got %d", filter.Page)
 			}
-			if pageSize != 10 {
-				t.Errorf("expected pageSize 10, got %d", pageSize)
+			if filter.PageSize != 10 {
+				t.Errorf("expected pageSize 10, got %d", filter.PageSize)
 			}
 			return []model.Inventory{}, 0, nil
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 
-	_, err := svc.List(context.Background(), 0, 0, 0, 0)
+	_, err := svc.List(context.Background(), &model.InventoryQueryFilter{Page: 0, PageSize: 0})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -283,7 +414,7 @@ func TestInventoryService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &UpdateInventoryInput{
 		Quantity: invFloatPtr(200),
 	}
@@ -305,7 +436,7 @@ func TestInventoryService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &UpdateInventoryInput{Quantity: invFloatPtr(200)}
 
 	_, err := svc.Update(context.Background(), 999, input)
@@ -325,7 +456,7 @@ func TestInventoryService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -341,7 +472,7 @@ func TestInventoryService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 999)
 
@@ -367,7 +498,7 @@ func TestInventoryService_AdjustQuantity_Increase(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &AdjustQuantityInput{
 		InventoryID: 1,
 		Quantity:    50,
@@ -401,7 +532,7 @@ func TestInventoryService_AdjustQuantity_Decrease(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &AdjustQuantityInput{
 		InventoryID: 1,
 		Quantity:    -50,
@@ -429,7 +560,7 @@ func TestInventoryService_AdjustQuantity_InsufficientStock(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &AdjustQuantityInput{
 		InventoryID: 1,
 		Quantity:    -100,
@@ -453,7 +584,7 @@ func TestInventoryService_AdjustQuantity_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &AdjustQuantityInput{
 		InventoryID: 999,
 		Quantity:    50,
@@ -469,7 +600,7 @@ func TestInventoryService_AdjustQuantity_NotFound(t *testing.T) {
 func TestInventoryService_AdjustQuantity_InvalidID(t *testing.T) {
 	mockRepo := &mockInventoryRepository{}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &AdjustQuantityInput{
 		InventoryID: 0,
 		Quantity:    50,
@@ -495,7 +626,7 @@ func TestInventoryService_CheckStock_Available(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &CheckStockInput{
 		WarehouseID: 1,
 		ProductID:   1,
@@ -529,7 +660,7 @@ func TestInventoryService_CheckStock_NotAvailable(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &CheckStockInput{
 		WarehouseID: 1,
 		ProductID:   1,
@@ -554,7 +685,7 @@ func TestInventoryService_CheckStock_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &CheckStockInput{
 		WarehouseID: 1,
 		ProductID:   1,
@@ -578,7 +709,7 @@ func TestInventoryService_CheckStock_NotFound(t *testing.T) {
 func TestInventoryService_CheckStock_MissingWarehouseID(t *testing.T) {
 	mockRepo := &mockInventoryRepository{}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &CheckStockInput{
 		ProductID: 1,
 		Quantity:  50,
@@ -594,7 +725,7 @@ func TestInventoryService_CheckStock_MissingWarehouseID(t *testing.T) {
 func TestInventoryService_CheckStock_MissingProductID(t *testing.T) {
 	mockRepo := &mockInventoryRepository{}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &CheckStockInput{
 		WarehouseID: 1,
 		Quantity:    50,
@@ -610,7 +741,7 @@ func TestInventoryService_CheckStock_MissingProductID(t *testing.T) {
 func TestInventoryService_CheckStock_InvalidQuantity(t *testing.T) {
 	mockRepo := &mockInventoryRepository{}
 
-	svc := NewInventoryService(mockRepo)
+	svc := NewInventoryService(mockRepo, nil)
 	input := &CheckStockInput{
 		WarehouseID: 1,
 		ProductID:   1,

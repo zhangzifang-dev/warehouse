@@ -43,7 +43,7 @@ type SupplierListResponse struct {
 type SupplierService interface {
 	Create(ctx context.Context, input *service.CreateSupplierInput) (*model.Supplier, error)
 	GetByID(ctx context.Context, id int64) (*model.Supplier, error)
-	List(ctx context.Context, page, pageSize int, keyword string) (*service.ListSuppliersResult, error)
+	List(ctx context.Context, filter *service.SupplierQueryFilter) (*service.ListSuppliersResult, error)
 	Update(ctx context.Context, id int64, input *service.UpdateSupplierInput) (*model.Supplier, error)
 	Delete(ctx context.Context, id int64) error
 }
@@ -116,9 +116,23 @@ func (h *SupplierHandler) GetByID(c *gin.Context) {
 func (h *SupplierHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
-	keyword := c.Query("keyword")
 
-	result, err := h.supplierService.List(c.Request.Context(), page, pageSize, keyword)
+	filter := &service.SupplierQueryFilter{
+		Code:  c.Query("code"),
+		Name:  c.Query("name"),
+		Contact: c.Query("contact"),
+		Phone: c.Query("phone"),
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	if statusStr := c.Query("status"); statusStr != "" {
+		if status, err := strconv.Atoi(statusStr); err == nil {
+			filter.Status = &status
+		}
+	}
+
+	result, err := h.supplierService.List(c.Request.Context(), filter)
 	if err != nil {
 		handleSupplierError(c, err)
 		return

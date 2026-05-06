@@ -13,6 +13,7 @@ type StockTransferRepository interface {
 	GetByID(ctx context.Context, id int64) (*model.StockTransfer, error)
 	GetByOrderNo(ctx context.Context, orderNo string) (*model.StockTransfer, error)
 	List(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) ([]model.StockTransfer, int, error)
+	ListWithFilter(ctx context.Context, filter *model.StockTransferQueryFilter) ([]model.StockTransfer, int, error)
 	Update(ctx context.Context, transfer *model.StockTransfer) error
 	Delete(ctx context.Context, id int64) error
 }
@@ -133,6 +134,28 @@ func (s *StockTransferService) List(ctx context.Context, page, pageSize int, fro
 	}
 
 	transfers, total, err := s.transferRepo.List(ctx, page, pageSize, fromWarehouseID, toWarehouseID, status)
+	if err != nil {
+		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list stock transfers")
+	}
+
+	return &ListStockTransfersResult{
+		Transfers: transfers,
+		Total:     total,
+	}, nil
+}
+
+func (s *StockTransferService) ListWithFilter(ctx context.Context, filter *model.StockTransferQueryFilter) (*ListStockTransfersResult, error) {
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.PageSize < 1 {
+		filter.PageSize = 10
+	}
+	if filter.PageSize > 100 {
+		filter.PageSize = 100
+	}
+
+	transfers, total, err := s.transferRepo.ListWithFilter(ctx, filter)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list stock transfers")
 	}

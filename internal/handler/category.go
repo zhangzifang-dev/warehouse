@@ -37,7 +37,7 @@ type CategoryListResponse struct {
 type CategoryService interface {
 	Create(ctx context.Context, input *service.CreateCategoryInput) (*model.Category, error)
 	GetByID(ctx context.Context, id int64) (*model.Category, error)
-	List(ctx context.Context, page, pageSize int, parentID int64) (*service.ListCategoriesResult, error)
+	List(ctx context.Context, filter *service.CategoryQueryFilter) (*service.ListCategoriesResult, error)
 	Update(ctx context.Context, id int64, input *service.UpdateCategoryInput) (*model.Category, error)
 	Delete(ctx context.Context, id int64) error
 }
@@ -101,9 +101,17 @@ func (h *CategoryHandler) GetByID(c *gin.Context) {
 func (h *CategoryHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
+	name := c.Query("name")
 	parentID, _ := strconv.ParseInt(c.Query("parent_id"), 10, 64)
 
-	result, err := h.categoryService.List(c.Request.Context(), page, pageSize, parentID)
+	filter := &service.CategoryQueryFilter{
+		Name:     name,
+		ParentID: parentID,
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	result, err := h.categoryService.List(c.Request.Context(), filter)
 	if err != nil {
 		handleCategoryError(c, err)
 		return

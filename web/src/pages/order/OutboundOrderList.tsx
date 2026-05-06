@@ -1,12 +1,14 @@
 import { useState } from 'react'
-import { Table, Button, Space, Drawer, Descriptions, Tag, message, Popconfirm } from 'antd'
-import { EyeOutlined, CheckOutlined, DeleteOutlined } from '@ant-design/icons'
+import { Table, Button, Space, Drawer, Descriptions, Tag, message, Popconfirm, Input, Select, DatePicker, Form, Row, Col, Card, InputNumber } from 'antd'
+import { EyeOutlined, CheckOutlined, DeleteOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { outboundApi } from '../../api/outbound'
+import { outboundApi, type OutboundOrderFilter } from '../../api/outbound'
 import { warehouseApi } from '../../api/warehouse'
 import { customerApi } from '../../api/customer'
 import { productApi } from '../../api/product'
 import type { OutboundOrder } from '../../types/order'
+
+const { RangePicker } = DatePicker
 
 const statusMap: Record<number, { text: string; color: string }> = {
   0: { text: '待确认', color: 'orange' },
@@ -21,10 +23,12 @@ export function OutboundOrderList() {
   const [selectedOrder, setSelectedOrder] = useState<OutboundOrder | null>(null)
   const queryClient = useQueryClient()
   const [messageApi, contextHolder] = message.useMessage()
+  const [filter, setFilter] = useState<OutboundOrderFilter>({})
+  const [form] = Form.useForm()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['outbound-orders', page, pageSize],
-    queryFn: () => outboundApi.list(page, pageSize)
+    queryKey: ['outbound-orders', page, pageSize, filter],
+    queryFn: () => outboundApi.list(page, pageSize, filter)
   })
 
   const { data: warehouses } = useQuery({
@@ -66,6 +70,33 @@ export function OutboundOrderList() {
     setDrawerOpen(true)
   }
 
+  const handleSearch = () => {
+    const values = form.getFieldsValue()
+    const newFilter: OutboundOrderFilter = {}
+    
+    if (values.order_no) newFilter.order_no = values.order_no
+    if (values.customer_id) newFilter.customer_id = values.customer_id
+    if (values.warehouse_id) newFilter.warehouse_id = values.warehouse_id
+    if (values.quantity_min !== undefined && values.quantity_min !== null) {
+      newFilter.quantity_min = values.quantity_min
+    }
+    if (values.quantity_max !== undefined && values.quantity_max !== null) {
+      newFilter.quantity_max = values.quantity_max
+    }
+    if (values.created_at_range && values.created_at_range[0] && values.created_at_range[1]) {
+      newFilter.created_at_start = values.created_at_range[0].format('YYYY-MM-DDTHH:mm:ssZ')
+      newFilter.created_at_end = values.created_at_range[1].format('YYYY-MM-DDTHH:mm:ssZ')
+    }
+    
+    setFilter(newFilter)
+    setPage(1)
+  }
+
+  const handleReset = () => {
+    form.resetFields()
+    setFilter({})
+    setPage(1)
+  }
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 60 },
     { title: '订单编号', dataIndex: 'order_no', width: 140 },
@@ -129,6 +160,79 @@ export function OutboundOrderList() {
   return (
     <>
       {contextHolder}
+      <Card style={{ marginBottom: 16 }}>
+        <Form form={form} layout="inline">
+          <Row gutter={16} style={{ width: '100%' }}>
+            <Col>
+              <Form.Item name="order_no" label="订单编号">
+                <Input placeholder="订单编号" style={{ width: 150 }} allowClear />
+              </Form.Item>
+            </Col>
+            <Col>
+              <Form.Item name="customer_id" label="客户">
+                <Select
+                  placeholder="选择客户"
+                  style={{ width: 150 }}
+                  allowClear
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={customers?.items.map((c: { id: number; name: string }) => ({
+                    label: c.name,
+                    value: c.id
+                  }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col>
+              <Form.Item name="warehouse_id" label="仓库">
+                <Select
+                  placeholder="选择仓库"
+                  style={{ width: 150 }}
+                  allowClear
+                  showSearch
+                  filterOption={(input, option) =>
+                    (option?.label ?? '').toString().toLowerCase().includes(input.toLowerCase())
+                  }
+                  options={warehouses?.items.map((w: { id: number; name: string }) => ({
+                    label: w.name,
+                    value: w.id
+                  }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col>
+              <Form.Item label="数量范围">
+                <Space>
+                  <Form.Item name="quantity_min" noStyle>
+                    <InputNumber placeholder="最小" style={{ width: 120 }} min={0} />
+                  </Form.Item>
+                  <span>-</span>
+                  <Form.Item name="quantity_max" noStyle>
+                    <InputNumber placeholder="最大" style={{ width: 120 }} min={0} />
+                  </Form.Item>
+                </Space>
+              </Form.Item>
+            </Col>
+            <Col>
+              <Form.Item name="created_at_range" label="创建时间">
+                <RangePicker showTime style={{ width: 360 }} />
+              </Form.Item>
+            </Col>
+            <Col>
+              <Space>
+                <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+                  查询
+                </Button>
+                <Button icon={<ReloadOutlined />} onClick={handleReset}>
+                  重置
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+        </Form>
+      </Card>
       <Table
         columns={columns}
         dataSource={data?.items}

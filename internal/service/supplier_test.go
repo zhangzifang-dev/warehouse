@@ -6,13 +6,14 @@ import (
 	"testing"
 
 	"warehouse/internal/model"
+	"warehouse/internal/repository"
 )
 
 type mockSupplierRepository struct {
 	createFunc    func(ctx context.Context, supplier *model.Supplier) error
 	getByIDFunc   func(ctx context.Context, id int64) (*model.Supplier, error)
 	getByCodeFunc func(ctx context.Context, code string) (*model.Supplier, error)
-	listFunc      func(ctx context.Context, page, pageSize int, keyword string) ([]model.Supplier, int, error)
+	listFunc      func(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error)
 	updateFunc    func(ctx context.Context, supplier *model.Supplier) error
 	deleteFunc    func(ctx context.Context, id int64) error
 }
@@ -38,9 +39,9 @@ func (m *mockSupplierRepository) GetByCode(ctx context.Context, code string) (*m
 	return nil, errors.New("not implemented")
 }
 
-func (m *mockSupplierRepository) List(ctx context.Context, page, pageSize int, keyword string) ([]model.Supplier, int, error) {
+func (m *mockSupplierRepository) List(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error) {
 	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize, keyword)
+		return m.listFunc(ctx, filter)
 	}
 	return nil, 0, errors.New("not implemented")
 }
@@ -72,7 +73,7 @@ func TestSupplierService_Create_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 	input := &CreateSupplierInput{
 		Name:    "Test Supplier",
 		Code:    "SUP001",
@@ -96,7 +97,7 @@ func TestSupplierService_Create_Success(t *testing.T) {
 func TestSupplierService_Create_EmptyName(t *testing.T) {
 	mockRepo := &mockSupplierRepository{}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 	input := &CreateSupplierInput{
 		Name: "",
 	}
@@ -115,7 +116,7 @@ func TestSupplierService_Create_DuplicateCode(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 	input := &CreateSupplierInput{
 		Name: "Test Supplier",
 		Code: "SUP001",
@@ -138,7 +139,7 @@ func TestSupplierService_Create_DefaultStatus(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 	input := &CreateSupplierInput{
 		Name: "Test Supplier",
 	}
@@ -163,7 +164,7 @@ func TestSupplierService_GetByID_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 
 	supplier, err := svc.GetByID(context.Background(), 1)
 
@@ -185,7 +186,7 @@ func TestSupplierService_GetByID_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 
 	_, err := svc.GetByID(context.Background(), 999)
 
@@ -196,7 +197,7 @@ func TestSupplierService_GetByID_NotFound(t *testing.T) {
 
 func TestSupplierService_List_Success(t *testing.T) {
 	mockRepo := &mockSupplierRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, keyword string) ([]model.Supplier, int, error) {
+		listFunc: func(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error) {
 			return []model.Supplier{
 				{BaseModel: model.BaseModel{ID: 1}, Name: "Supplier A"},
 				{BaseModel: model.BaseModel{ID: 2}, Name: "Supplier B"},
@@ -204,9 +205,9 @@ func TestSupplierService_List_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 
-	result, err := svc.List(context.Background(), 1, 10, "")
+	result, err := svc.List(context.Background(), &SupplierQueryFilter{Page: 1, PageSize: 10})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -220,45 +221,172 @@ func TestSupplierService_List_Success(t *testing.T) {
 }
 
 func TestSupplierService_List_WithKeyword(t *testing.T) {
-	receivedKeyword := ""
+	receivedFilter := &repository.SupplierQueryFilter{}
 	mockRepo := &mockSupplierRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, keyword string) ([]model.Supplier, int, error) {
-			receivedKeyword = keyword
+		listFunc: func(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error) {
+			receivedFilter = filter
 			return []model.Supplier{{BaseModel: model.BaseModel{ID: 1}, Name: "Test Supplier"}}, 1, nil
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 
-	_, err := svc.List(context.Background(), 1, 10, "test")
+	_, err := svc.List(context.Background(), &SupplierQueryFilter{Name: "test", Page: 1, PageSize: 10})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
 	}
-	if receivedKeyword != "test" {
-		t.Errorf("expected keyword 'test', got '%s'", receivedKeyword)
+	if receivedFilter.Name != "test" {
+		t.Errorf("expected name 'test', got '%s'", receivedFilter.Name)
 	}
 }
 
 func TestSupplierService_List_DefaultPagination(t *testing.T) {
 	mockRepo := &mockSupplierRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, keyword string) ([]model.Supplier, int, error) {
-			if page != 1 {
-				t.Errorf("expected page 1, got %d", page)
+		listFunc: func(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error) {
+			if filter.Page != 1 {
+				t.Errorf("expected page 1, got %d", filter.Page)
 			}
-			if pageSize != 10 {
-				t.Errorf("expected pageSize 10, got %d", pageSize)
+			if filter.PageSize != 10 {
+				t.Errorf("expected pageSize 10, got %d", filter.PageSize)
 			}
 			return []model.Supplier{}, 0, nil
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 
-	_, err := svc.List(context.Background(), 0, 0, "")
+	_, err := svc.List(context.Background(), &SupplierQueryFilter{Page: 0, PageSize: 0})
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
+	}
+}
+
+func TestSupplierService_List_WithCodeFilter(t *testing.T) {
+	receivedFilter := &repository.SupplierQueryFilter{}
+	mockRepo := &mockSupplierRepository{
+		listFunc: func(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error) {
+			receivedFilter = filter
+			return []model.Supplier{{BaseModel: model.BaseModel{ID: 1}, Code: "SUP001"}}, 1, nil
+		},
+	}
+
+	svc := NewSupplierService(mockRepo, nil)
+
+	_, err := svc.List(context.Background(), &SupplierQueryFilter{Code: "SUP", Page: 1, PageSize: 10})
+
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if receivedFilter.Code != "SUP" {
+		t.Errorf("expected code 'SUP', got '%s'", receivedFilter.Code)
+	}
+}
+
+func TestSupplierService_List_WithContactFilter(t *testing.T) {
+	receivedFilter := &repository.SupplierQueryFilter{}
+	mockRepo := &mockSupplierRepository{
+		listFunc: func(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error) {
+			receivedFilter = filter
+			return []model.Supplier{{BaseModel: model.BaseModel{ID: 1}, Contact: "John"}}, 1, nil
+		},
+	}
+
+	svc := NewSupplierService(mockRepo, nil)
+
+	_, err := svc.List(context.Background(), &SupplierQueryFilter{Contact: "John", Page: 1, PageSize: 10})
+
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if receivedFilter.Contact != "John" {
+		t.Errorf("expected contact 'John', got '%s'", receivedFilter.Contact)
+	}
+}
+
+func TestSupplierService_List_WithPhoneFilter(t *testing.T) {
+	receivedFilter := &repository.SupplierQueryFilter{}
+	mockRepo := &mockSupplierRepository{
+		listFunc: func(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error) {
+			receivedFilter = filter
+			return []model.Supplier{{BaseModel: model.BaseModel{ID: 1}, Phone: "123456"}}, 1, nil
+		},
+	}
+
+	svc := NewSupplierService(mockRepo, nil)
+
+	_, err := svc.List(context.Background(), &SupplierQueryFilter{Phone: "123", Page: 1, PageSize: 10})
+
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if receivedFilter.Phone != "123" {
+		t.Errorf("expected phone '123', got '%s'", receivedFilter.Phone)
+	}
+}
+
+func TestSupplierService_List_WithStatusFilter(t *testing.T) {
+	receivedFilter := &repository.SupplierQueryFilter{}
+	mockRepo := &mockSupplierRepository{
+		listFunc: func(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error) {
+			receivedFilter = filter
+			return []model.Supplier{{BaseModel: model.BaseModel{ID: 1}, Status: 1}}, 1, nil
+		},
+	}
+
+	svc := NewSupplierService(mockRepo, nil)
+	status := 1
+
+	_, err := svc.List(context.Background(), &SupplierQueryFilter{Status: &status, Page: 1, PageSize: 10})
+
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if receivedFilter.Status == nil || *receivedFilter.Status != 1 {
+		t.Errorf("expected status 1, got %v", receivedFilter.Status)
+	}
+}
+
+func TestSupplierService_List_WithMultipleFilters(t *testing.T) {
+	receivedFilter := &repository.SupplierQueryFilter{}
+	mockRepo := &mockSupplierRepository{
+		listFunc: func(ctx context.Context, filter *repository.SupplierQueryFilter) ([]model.Supplier, int, error) {
+			receivedFilter = filter
+			return []model.Supplier{{BaseModel: model.BaseModel{ID: 1}}}, 1, nil
+		},
+	}
+
+	svc := NewSupplierService(mockRepo, nil)
+	status := 1
+
+	_, err := svc.List(context.Background(), &SupplierQueryFilter{
+		Code:     "SUP",
+		Name:     "Test",
+		Contact:  "John",
+		Phone:    "123",
+		Status:   &status,
+		Page:     1,
+		PageSize: 10,
+	})
+
+	if err != nil {
+		t.Fatalf("List failed: %v", err)
+	}
+	if receivedFilter.Code != "SUP" {
+		t.Errorf("expected code 'SUP', got '%s'", receivedFilter.Code)
+	}
+	if receivedFilter.Name != "Test" {
+		t.Errorf("expected name 'Test', got '%s'", receivedFilter.Name)
+	}
+	if receivedFilter.Contact != "John" {
+		t.Errorf("expected contact 'John', got '%s'", receivedFilter.Contact)
+	}
+	if receivedFilter.Phone != "123" {
+		t.Errorf("expected phone '123', got '%s'", receivedFilter.Phone)
+	}
+	if receivedFilter.Status == nil || *receivedFilter.Status != 1 {
+		t.Errorf("expected status 1, got %v", receivedFilter.Status)
 	}
 }
 
@@ -281,7 +409,7 @@ func TestSupplierService_Update_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 	input := &UpdateSupplierInput{
 		Name: strPtrSupplier("New Name"),
 	}
@@ -315,7 +443,7 @@ func TestSupplierService_Update_Code(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 	input := &UpdateSupplierInput{
 		Code: strPtrSupplier("NEW"),
 	}
@@ -344,7 +472,7 @@ func TestSupplierService_Update_DuplicateCode(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 	input := &UpdateSupplierInput{
 		Code: strPtrSupplier("EXISTING"),
 	}
@@ -363,7 +491,7 @@ func TestSupplierService_Update_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 	input := &UpdateSupplierInput{Name: strPtrSupplier("Updated")}
 
 	_, err := svc.Update(context.Background(), 999, input)
@@ -383,7 +511,7 @@ func TestSupplierService_Delete_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 1)
 
@@ -399,7 +527,7 @@ func TestSupplierService_Delete_NotFound(t *testing.T) {
 		},
 	}
 
-	svc := NewSupplierService(mockRepo)
+	svc := NewSupplierService(mockRepo, nil)
 
 	err := svc.Delete(context.Background(), 999)
 

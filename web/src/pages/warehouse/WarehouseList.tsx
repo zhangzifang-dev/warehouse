@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { Table, Button, Space, Modal, Form, Input, Select, message, Popconfirm, Tag } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { warehouseApi } from '../../api/warehouse'
+import { warehouseApi, type WarehouseFilter } from '../../api/warehouse'
 import type { Warehouse, CreateWarehouseRequest, UpdateWarehouseRequest } from '../../types/warehouse'
 
 export function WarehouseList() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [filter, setFilter] = useState<WarehouseFilter>({})
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form] = Form.useForm()
@@ -15,8 +16,8 @@ export function WarehouseList() {
   const [messageApi, contextHolder] = message.useMessage()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['warehouses', page, pageSize],
-    queryFn: () => warehouseApi.list(page, pageSize)
+    queryKey: ['warehouses', page, pageSize, filter],
+    queryFn: () => warehouseApi.list(page, pageSize, filter)
   })
 
   const createMutation = useMutation({
@@ -75,6 +76,11 @@ export function WarehouseList() {
     }
   }
 
+  const handleNameFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilter(prev => ({ ...prev, name: e.target.value || undefined }))
+    setPage(1)
+  }
+
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 60 },
     { title: '仓库编码', dataIndex: 'code', width: 100 },
@@ -114,9 +120,18 @@ export function WarehouseList() {
     <>
       {contextHolder}
       <div style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
-          新增仓库
-        </Button>
+        <Space>
+          <Input
+            placeholder="仓库名称"
+            style={{ width: 150 }}
+            value={filter.name || ''}
+            onChange={handleNameFilterChange}
+            allowClear
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+            新增仓库
+          </Button>
+        </Space>
       </div>
       <Table
         columns={columns}

@@ -1,5 +1,19 @@
 package model
 
+import "time"
+
+type InboundOrderQueryFilter struct {
+	OrderNo        string
+	SupplierID     *int64
+	WarehouseID    *int64
+	QuantityMin    *float64
+	QuantityMax    *float64
+	CreatedAtStart *time.Time
+	CreatedAtEnd   *time.Time
+	Page           int
+	PageSize       int
+}
+
 type InboundOrder struct {
 	BaseModel
 	OrderNo       string  `bun:"order_no,notnull,unique" json:"order_no"`
@@ -27,6 +41,19 @@ func (i *InboundItem) TableName() string {
 	return "inbound_items"
 }
 
+
+type OutboundOrderQueryFilter struct {
+	OrderNo        string
+	CustomerID     *int64
+	WarehouseID    *int64
+	QuantityMin    *float64
+	QuantityMax    *float64
+	CreatedAtStart *time.Time
+	CreatedAtEnd   *time.Time
+	Page           int
+	PageSize       int
+}
+
 type OutboundOrder struct {
 	BaseModel
 	OrderNo       string  `bun:"order_no,notnull,unique" json:"order_no"`
@@ -52,6 +79,16 @@ type OutboundItem struct {
 
 func (i *OutboundItem) TableName() string {
 	return "outbound_items"
+}
+
+type StockTransferQueryFilter struct {
+	OrderNo           string
+	SourceWarehouseID *int64
+	TargetWarehouseID *int64
+	CreatedAtStart    *time.Time
+	CreatedAtEnd      *time.Time
+	Page              int
+	PageSize          int
 }
 
 type StockTransfer struct {

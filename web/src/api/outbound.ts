@@ -2,10 +2,20 @@ import api from './client'
 import type { OutboundOrder, CreateOutboundOrderRequest } from '../types/order'
 import type { PaginatedResponse } from '../types/warehouse'
 
+export interface OutboundOrderFilter {
+  order_no?: string
+  customer_id?: number
+  warehouse_id?: number
+  quantity_min?: number
+  quantity_max?: number
+  created_at_start?: string
+  created_at_end?: string
+}
+
 export const outboundApi = {
-  list: async (page = 1, size = 10): Promise<PaginatedResponse<OutboundOrder>> => {
+  list: async (page = 1, size = 10, filter?: OutboundOrderFilter): Promise<PaginatedResponse<OutboundOrder>> => {
     const response = await api.get<PaginatedResponse<OutboundOrder>>('/outbound-orders', {
-      params: { page, size }
+      params: { page, size, ...filter }
     })
     return response.data
   },

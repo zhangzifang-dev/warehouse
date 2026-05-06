@@ -18,7 +18,7 @@ import (
 )
 
 type mockInventoryService struct {
-	listFunc            func(ctx context.Context, page, pageSize int, warehouseID, productID int64) (*service.ListInventoriesResult, error)
+	listFunc            func(ctx context.Context, filter *model.InventoryQueryFilter) (*service.ListInventoriesResult, error)
 	getByIDFunc         func(ctx context.Context, id int64) (*model.Inventory, error)
 	createFunc          func(ctx context.Context, input *service.CreateInventoryInput) (*model.Inventory, error)
 	updateFunc          func(ctx context.Context, id int64, input *service.UpdateInventoryInput) (*model.Inventory, error)
@@ -27,9 +27,9 @@ type mockInventoryService struct {
 	checkStockFunc      func(ctx context.Context, input *service.CheckStockInput) (*service.CheckStockResult, error)
 }
 
-func (m *mockInventoryService) List(ctx context.Context, page, pageSize int, warehouseID, productID int64) (*service.ListInventoriesResult, error) {
+func (m *mockInventoryService) List(ctx context.Context, filter *model.InventoryQueryFilter) (*service.ListInventoriesResult, error) {
 	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize, warehouseID, productID)
+		return m.listFunc(ctx, filter)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -86,16 +86,20 @@ func setupInventoryHandlerTest(t *testing.T) (*gin.Engine, *InventoryHandler, *m
 
 func TestInventoryHandler_List(t *testing.T) {
 	tests := []struct {
-		name            string
-		mockInventories []model.Inventory
-		mockTotal       int
-		mockError       error
-		queryWarehouse  string
-		queryProduct    string
-		queryPage       string
-		querySize       string
-		wantStatus      int
-		wantTotal       int
+		name              string
+		mockInventories   []model.Inventory
+		mockTotal         int
+		mockError         error
+		queryProductName  string
+		queryQuantityMin  string
+		queryQuantityMax  string
+		queryBatchNo      string
+		queryProductID    string
+		queryWarehouseID  string
+		queryPage         string
+		querySize         string
+		wantStatus        int
+		wantTotal         int
 	}{
 		{
 			name: "success with default pagination",
@@ -108,24 +112,89 @@ func TestInventoryHandler_List(t *testing.T) {
 			wantTotal:  2,
 		},
 		{
-			name: "success with warehouse filter",
+			name: "success with product name filter",
 			mockInventories: []model.Inventory{
-				{BaseModel: model.BaseModel{ID: 1}, WarehouseID: 1},
+				{BaseModel: model.BaseModel{ID: 1}, ProductID: 1, Quantity: 100},
+			},
+			mockTotal:        1,
+			queryProductName: "测试商品",
+			wantStatus:       http.StatusOK,
+			wantTotal:        1,
+		},
+		{
+			name: "success with quantity min filter",
+			mockInventories: []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, Quantity: 150},
+			},
+			mockTotal:        1,
+			queryQuantityMin: "100",
+			wantStatus:       http.StatusOK,
+			wantTotal:        1,
+		},
+		{
+			name: "success with quantity max filter",
+			mockInventories: []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, Quantity: 50},
+			},
+			mockTotal:        1,
+			queryQuantityMax: "100",
+			wantStatus:       http.StatusOK,
+			wantTotal:        1,
+		},
+		{
+			name: "success with quantity range filter",
+			mockInventories: []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, Quantity: 100},
+				{BaseModel: model.BaseModel{ID: 2}, Quantity: 150},
+			},
+			mockTotal:        2,
+			queryQuantityMin: "50",
+			queryQuantityMax: "200",
+			wantStatus:       http.StatusOK,
+			wantTotal:        2,
+		},
+		{
+			name: "success with batch no filter",
+			mockInventories: []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, BatchNo: "BATCH001", Quantity: 100},
 			},
 			mockTotal:     1,
-			queryWarehouse: "1",
+			queryBatchNo:  "BATCH001",
 			wantStatus:    http.StatusOK,
 			wantTotal:     1,
 		},
 		{
-			name: "success with product filter",
+			name: "success with product id filter",
 			mockInventories: []model.Inventory{
-				{BaseModel: model.BaseModel{ID: 1}, ProductID: 1},
+				{BaseModel: model.BaseModel{ID: 1}, ProductID: 1, Quantity: 100},
 			},
-			mockTotal:     1,
-			queryProduct:  "1",
-			wantStatus:    http.StatusOK,
-			wantTotal:     1,
+			mockTotal:       1,
+			queryProductID:  "1",
+			wantStatus:      http.StatusOK,
+			wantTotal:       1,
+		},
+		{
+			name: "success with warehouse id filter",
+			mockInventories: []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, WarehouseID: 1, Quantity: 100},
+			},
+			mockTotal:        1,
+			queryWarehouseID: "1",
+			wantStatus:       http.StatusOK,
+			wantTotal:        1,
+		},
+		{
+			name: "success with all filters",
+			mockInventories: []model.Inventory{
+				{BaseModel: model.BaseModel{ID: 1}, ProductID: 1, BatchNo: "BATCH001", Quantity: 100},
+			},
+			mockTotal:        1,
+			queryProductName: "测试商品",
+			queryQuantityMin: "50",
+			queryQuantityMax: "200",
+			queryBatchNo:     "BATCH001",
+			wantStatus:       http.StatusOK,
+			wantTotal:        1,
 		},
 		{
 			name:            "empty list",
@@ -144,7 +213,7 @@ func TestInventoryHandler_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router, handler, mockSvc := setupInventoryHandlerTest(t)
-			mockSvc.listFunc = func(ctx context.Context, page, pageSize int, warehouseID, productID int64) (*service.ListInventoriesResult, error) {
+			mockSvc.listFunc = func(ctx context.Context, filter *model.InventoryQueryFilter) (*service.ListInventoriesResult, error) {
 				if tt.mockError != nil {
 					return nil, tt.mockError
 				}
@@ -156,7 +225,7 @@ func TestInventoryHandler_List(t *testing.T) {
 
 			router.GET("/inventory", handler.List)
 
-			req := httptest.NewRequest("GET", "/inventory?warehouse_id="+tt.queryWarehouse+"&product_id="+tt.queryProduct+"&page="+tt.queryPage+"&size="+tt.querySize, nil)
+			req := httptest.NewRequest("GET", "/inventory?product_name="+tt.queryProductName+"&product_id="+tt.queryProductID+"&warehouse_id="+tt.queryWarehouseID+"&quantity_min="+tt.queryQuantityMin+"&quantity_max="+tt.queryQuantityMax+"&batch_no="+tt.queryBatchNo+"&page="+tt.queryPage+"&size="+tt.querySize, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 

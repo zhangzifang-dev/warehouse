@@ -81,9 +81,6 @@ func TestUserService_Create_Success(t *testing.T) {
 	input := &CreateUserInput{
 		Username: "testuser",
 		Password: "password123",
-		Nickname: "Test User",
-		Email:    "test@example.com",
-		Phone:    "1234567890",
 	}
 
 	user, err := svc.Create(context.Background(), input)
@@ -151,7 +148,6 @@ func TestUserService_GetByID_Success(t *testing.T) {
 			return &model.User{
 				BaseModel: model.BaseModel{ID: id},
 				Username:  "testuser",
-				Nickname:  "Test User",
 			}, nil
 		},
 	}
@@ -254,25 +250,21 @@ func TestUserService_List_MaxPageSize(t *testing.T) {
 }
 
 func TestUserService_Update_Success(t *testing.T) {
-	updatedUser := &model.User{}
 	mockRepo := &mockUserRepositoryForService{
 		getByIDFunc: func(ctx context.Context, id int64) (*model.User, error) {
 			return &model.User{
 				BaseModel: model.BaseModel{ID: id},
 				Username:  "testuser",
-				Nickname:  "Old Nickname",
 			}, nil
 		},
 		updateFunc: func(ctx context.Context, user *model.User) error {
-			updatedUser = user
 			return nil
 		},
 	}
 
 	svc := NewUserService(mockRepo, nil)
 	input := &UpdateUserInput{
-		Nickname: "New Nickname",
-		Email:    "new@example.com",
+		Status: &[]int{1}[0],
 	}
 
 	user, err := svc.Update(context.Background(), 1, input)
@@ -280,8 +272,8 @@ func TestUserService_Update_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Update failed: %v", err)
 	}
-	if user.Nickname != "New Nickname" {
-		t.Errorf("expected nickname 'New Nickname', got '%s'", updatedUser.Nickname)
+	if user.Status != 1 {
+		t.Errorf("expected status 1, got %d", user.Status)
 	}
 }
 
@@ -323,7 +315,7 @@ func TestUserService_Update_NotFound(t *testing.T) {
 	}
 
 	svc := NewUserService(mockRepo, nil)
-	input := &UpdateUserInput{Nickname: "New Name"}
+	input := &UpdateUserInput{Status: &[]int{1}[0]}
 
 	_, err := svc.Update(context.Background(), 999, input)
 

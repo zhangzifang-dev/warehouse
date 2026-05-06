@@ -40,17 +40,30 @@ func TestCustomerRepository_GetByCode_Query(t *testing.T) {
 	}
 }
 
-func TestCustomerRepository_List_Query(t *testing.T) {
+func TestCustomerRepository_List_WithFilter(t *testing.T) {
 	repo, _, ctx := setupCustomerTest(t)
-	_, _, err := repo.List(ctx, 1, 10, "")
+	filter := &CustomerQueryFilter{
+		Code:     "CUS",
+		Name:     "Test",
+		Phone:    "123",
+		Status:   intPtrCustomer(1),
+		Page:     1,
+		PageSize: 10,
+	}
+	_, _, err := repo.List(ctx, filter)
 	if err == nil {
 		t.Error("List() should return error with mock DB")
 	}
 }
 
-func TestCustomerRepository_List_WithKeyword(t *testing.T) {
+func TestCustomerRepository_List_WithFilter_PartialFields(t *testing.T) {
 	repo, _, ctx := setupCustomerTest(t)
-	_, _, err := repo.List(ctx, 1, 10, "test")
+	filter := &CustomerQueryFilter{
+		Name:     "Test",
+		Page:     1,
+		PageSize: 10,
+	}
+	_, _, err := repo.List(ctx, filter)
 	if err == nil {
 		t.Error("List() should return error with mock DB")
 	}
@@ -95,4 +108,8 @@ func setupCustomerTest(t *testing.T) (*CustomerRepository, *bun.DB, context.Cont
 	repo := NewCustomerRepository(db)
 	ctx := context.Background()
 	return repo, db, ctx
+}
+
+func intPtrCustomer(i int) *int {
+	return &i
 }

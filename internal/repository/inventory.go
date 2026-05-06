@@ -34,24 +34,42 @@ func (r *InventoryRepository) GetByID(ctx context.Context, id int64) (*model.Inv
 	return inventory, nil
 }
 
-func (r *InventoryRepository) List(ctx context.Context, page, pageSize int, warehouseID, productID int64) ([]model.Inventory, int, error) {
+func (r *InventoryRepository) List(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error) {
 	var inventories []model.Inventory
-	query := r.db.NewSelect().
+	q := r.db.NewSelect().
 		Model(&inventories).
-		Where("deleted_at IS NULL")
+		Relation("Product").
+		Relation("Warehouse").
+		Where("inventory.deleted_at IS NULL")
 
-	if warehouseID > 0 {
-		query = query.Where("warehouse_id = ?", warehouseID)
+	if filter.ProductID > 0 {
+		q = q.Where("inventory.product_id = ?", filter.ProductID)
 	}
 
-	if productID > 0 {
-		query = query.Where("product_id = ?", productID)
+	if filter.WarehouseID > 0 {
+		q = q.Where("inventory.warehouse_id = ?", filter.WarehouseID)
 	}
 
-	total, err := query.
-		Order("id DESC").
-		Offset((page - 1) * pageSize).
-		Limit(pageSize).
+	if filter.ProductName != "" {
+		q = q.Where("product.name LIKE ?", "%"+filter.ProductName+"%")
+	}
+
+	if filter.QuantityMin != nil {
+		q = q.Where("inventory.quantity >= ?", *filter.QuantityMin)
+	}
+
+	if filter.QuantityMax != nil {
+		q = q.Where("inventory.quantity <= ?", *filter.QuantityMax)
+	}
+
+	if filter.BatchNo != "" {
+		q = q.Where("inventory.batch_no LIKE ?", "%"+filter.BatchNo+"%")
+	}
+
+	total, err := q.
+		Order("inventory.id DESC").
+		Offset((filter.Page - 1) * filter.PageSize).
+		Limit(filter.PageSize).
 		ScanAndCount(ctx)
 	if err != nil {
 		return nil, 0, err

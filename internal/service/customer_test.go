@@ -6,15 +6,16 @@ import (
 	"testing"
 
 	"warehouse/internal/model"
+	"warehouse/internal/repository"
 )
 
 type mockCustomerRepository struct {
-	createFunc    func(ctx context.Context, customer *model.Customer) error
-	getByIDFunc   func(ctx context.Context, id int64) (*model.Customer, error)
-	getByCodeFunc func(ctx context.Context, code string) (*model.Customer, error)
-	listFunc      func(ctx context.Context, page, pageSize int, keyword string) ([]model.Customer, int, error)
-	updateFunc    func(ctx context.Context, customer *model.Customer) error
-	deleteFunc    func(ctx context.Context, id int64) error
+	createFunc         func(ctx context.Context, customer *model.Customer) error
+	getByIDFunc        func(ctx context.Context, id int64) (*model.Customer, error)
+	getByCodeFunc      func(ctx context.Context, code string) (*model.Customer, error)
+	listWithFilterFunc func(ctx context.Context, filter *repository.CustomerQueryFilter) ([]model.Customer, int, error)
+	updateFunc         func(ctx context.Context, customer *model.Customer) error
+	deleteFunc         func(ctx context.Context, id int64) error
 }
 
 func (m *mockCustomerRepository) Create(ctx context.Context, customer *model.Customer) error {
@@ -38,9 +39,9 @@ func (m *mockCustomerRepository) GetByCode(ctx context.Context, code string) (*m
 	return nil, errors.New("not implemented")
 }
 
-func (m *mockCustomerRepository) List(ctx context.Context, page, pageSize int, keyword string) ([]model.Customer, int, error) {
-	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize, keyword)
+func (m *mockCustomerRepository) List(ctx context.Context, filter *repository.CustomerQueryFilter) ([]model.Customer, int, error) {
+	if m.listWithFilterFunc != nil {
+		return m.listWithFilterFunc(ctx, filter)
 	}
 	return nil, 0, errors.New("not implemented")
 }
@@ -194,19 +195,29 @@ func TestCustomerService_GetByID_NotFound(t *testing.T) {
 	}
 }
 
-func TestCustomerService_List_Success(t *testing.T) {
+func TestCustomerService_List_WithFilter(t *testing.T) {
+	receivedFilter := &repository.CustomerQueryFilter{}
 	mockRepo := &mockCustomerRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, keyword string) ([]model.Customer, int, error) {
+		listWithFilterFunc: func(ctx context.Context, filter *repository.CustomerQueryFilter) ([]model.Customer, int, error) {
+			receivedFilter = filter
 			return []model.Customer{
-				{BaseModel: model.BaseModel{ID: 1}, Name: "Customer A"},
-				{BaseModel: model.BaseModel{ID: 2}, Name: "Customer B"},
+				{BaseModel: model.BaseModel{ID: 1}, Name: "Customer A", Code: "CUS001"},
+				{BaseModel: model.BaseModel{ID: 2}, Name: "Customer B", Code: "CUS002"},
 			}, 2, nil
 		},
 	}
 
 	svc := NewCustomerService(mockRepo, nil)
+	filter := &CustomerQueryFilter{
+		Code:     "CUS",
+		Name:     "Test",
+		Phone:    "123",
+		Status:   intPtrSvc(1),
+		Page:     1,
+		PageSize: 10,
+	}
 
-	result, err := svc.List(context.Background(), 1, 10, "")
+	result, err := svc.List(context.Background(), filter)
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -217,45 +228,40 @@ func TestCustomerService_List_Success(t *testing.T) {
 	if result.Total != 2 {
 		t.Errorf("expected total 2, got %d", result.Total)
 	}
-}
-
-func TestCustomerService_List_WithKeyword(t *testing.T) {
-	receivedKeyword := ""
-	mockRepo := &mockCustomerRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, keyword string) ([]model.Customer, int, error) {
-			receivedKeyword = keyword
-			return []model.Customer{{BaseModel: model.BaseModel{ID: 1}, Name: "Test Customer"}}, 1, nil
-		},
+	if receivedFilter.Code != "CUS" {
+		t.Errorf("expected code filter 'CUS', got '%s'", receivedFilter.Code)
 	}
-
-	svc := NewCustomerService(mockRepo, nil)
-
-	_, err := svc.List(context.Background(), 1, 10, "test")
-
-	if err != nil {
-		t.Fatalf("List failed: %v", err)
+	if receivedFilter.Name != "Test" {
+		t.Errorf("expected name filter 'Test', got '%s'", receivedFilter.Name)
 	}
-	if receivedKeyword != "test" {
-		t.Errorf("expected keyword 'test', got '%s'", receivedKeyword)
+	if receivedFilter.Phone != "123" {
+		t.Errorf("expected phone filter '123', got '%s'", receivedFilter.Phone)
+	}
+	if receivedFilter.Status == nil || *receivedFilter.Status != 1 {
+		t.Errorf("expected status filter 1, got %v", receivedFilter.Status)
 	}
 }
 
-func TestCustomerService_List_DefaultPagination(t *testing.T) {
+func TestCustomerService_List_WithFilter_DefaultPagination(t *testing.T) {
 	mockRepo := &mockCustomerRepository{
-		listFunc: func(ctx context.Context, page, pageSize int, keyword string) ([]model.Customer, int, error) {
-			if page != 1 {
-				t.Errorf("expected page 1, got %d", page)
+		listWithFilterFunc: func(ctx context.Context, filter *repository.CustomerQueryFilter) ([]model.Customer, int, error) {
+			if filter.Page != 1 {
+				t.Errorf("expected page 1, got %d", filter.Page)
 			}
-			if pageSize != 10 {
-				t.Errorf("expected pageSize 10, got %d", pageSize)
+			if filter.PageSize != 10 {
+				t.Errorf("expected pageSize 10, got %d", filter.PageSize)
 			}
 			return []model.Customer{}, 0, nil
 		},
 	}
 
 	svc := NewCustomerService(mockRepo, nil)
+	filter := &CustomerQueryFilter{
+		Page:     0,
+		PageSize: 0,
+	}
 
-	_, err := svc.List(context.Background(), 0, 0, "")
+	_, err := svc.List(context.Background(), filter)
 
 	if err != nil {
 		t.Fatalf("List failed: %v", err)
@@ -410,4 +416,8 @@ func TestCustomerService_Delete_NotFound(t *testing.T) {
 
 func strPtrCustomer(s string) *string {
 	return &s
+}
+
+func intPtrSvc(i int) *int {
+	return &i
 }

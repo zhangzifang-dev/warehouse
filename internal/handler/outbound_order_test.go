@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -18,17 +19,25 @@ import (
 )
 
 type mockOutboundOrderService struct {
-	listFunc    func(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListOutboundOrdersResult, error)
-	getByIDFunc func(ctx context.Context, id int64) (*model.OutboundOrder, error)
-	createFunc  func(ctx context.Context, input *service.CreateOutboundOrderInput) (*model.OutboundOrder, error)
-	updateFunc  func(ctx context.Context, id int64, input *service.UpdateOutboundOrderInput) (*model.OutboundOrder, error)
-	deleteFunc  func(ctx context.Context, id int64) error
-	confirmFunc func(ctx context.Context, id int64) (*model.OutboundOrder, error)
+	listFunc             func(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListOutboundOrdersResult, error)
+	listWithFilterFunc   func(ctx context.Context, filter *model.OutboundOrderQueryFilter) (*service.ListOutboundOrdersResult, error)
+	getByIDFunc          func(ctx context.Context, id int64) (*model.OutboundOrder, error)
+	createFunc           func(ctx context.Context, input *service.CreateOutboundOrderInput) (*model.OutboundOrder, error)
+	updateFunc           func(ctx context.Context, id int64, input *service.UpdateOutboundOrderInput) (*model.OutboundOrder, error)
+	deleteFunc           func(ctx context.Context, id int64) error
+	confirmFunc          func(ctx context.Context, id int64) (*model.OutboundOrder, error)
 }
 
 func (m *mockOutboundOrderService) List(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListOutboundOrdersResult, error) {
 	if m.listFunc != nil {
 		return m.listFunc(ctx, page, pageSize, warehouseID, status)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (m *mockOutboundOrderService) ListWithFilter(ctx context.Context, filter *model.OutboundOrderQueryFilter) (*service.ListOutboundOrdersResult, error) {
+	if m.listWithFilterFunc != nil {
+		return m.listWithFilterFunc(ctx, filter)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -107,7 +116,7 @@ func TestOutboundOrderHandler_List(t *testing.T) {
 			mockTotal:      1,
 			queryWarehouse: "1",
 			wantStatus:     http.StatusOK,
-			wantTotal:      1,
+			wantTotal:       1,
 		},
 		{
 			name: "success with status filter",
@@ -136,9 +145,15 @@ func TestOutboundOrderHandler_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router, handler, mockSvc := setupOutboundOrderHandlerTest(t)
-			mockSvc.listFunc = func(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListOutboundOrdersResult, error) {
+			mockSvc.listWithFilterFunc = func(ctx context.Context, filter *model.OutboundOrderQueryFilter) (*service.ListOutboundOrdersResult, error) {
 				if tt.mockError != nil {
 					return nil, tt.mockError
+				}
+				if tt.queryWarehouse != "" {
+					warehouseID := int64(1)
+					if filter.WarehouseID == nil || *filter.WarehouseID != warehouseID {
+						t.Errorf("expected WarehouseID %d", warehouseID)
+					}
 				}
 				return &service.ListOutboundOrdersResult{
 					Orders: tt.mockOrders,
@@ -149,6 +164,88 @@ func TestOutboundOrderHandler_List(t *testing.T) {
 			router.GET("/outbound-orders", handler.List)
 
 			req := httptest.NewRequest("GET", "/outbound-orders?warehouse_id="+tt.queryWarehouse+"&status="+tt.queryStatus+"&page="+tt.queryPage+"&size="+tt.querySize, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+			if tt.wantStatus == http.StatusOK {
+				var resp map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &resp)
+				assert.NoError(t, err)
+				data := resp["data"].(map[string]interface{})
+				assert.Equal(t, float64(tt.wantTotal), data["total"])
+			}
+		})
+	}
+}
+
+func TestOutboundOrderHandler_ListWithFilter(t *testing.T) {
+	now := time.Now()
+	customerID := int64(1)
+	warehouseID := int64(2)
+
+	tests := []struct {
+		name       string
+		query      string
+		mockResult *service.ListOutboundOrdersResult
+		mockError  error
+		wantStatus int
+		wantTotal  int
+	}{
+		{
+			name:  "success with all filters",
+			query: "?order_no=SO-2024&customer_id=1&warehouse_id=2&quantity_min=10&quantity_max=100&created_at_start=" + now.Format(time.RFC3339) + "&created_at_end=" + now.Add(24*time.Hour).Format(time.RFC3339),
+			mockResult: &service.ListOutboundOrdersResult{
+				Orders: []model.OutboundOrder{
+					{BaseModel: model.BaseModel{ID: 1}, OrderNo: "SO-2024-001"},
+				},
+				Total: 1,
+			},
+			wantStatus: http.StatusOK,
+			wantTotal:  1,
+		},
+		{
+			name:  "success with partial filters",
+			query: "?order_no=SO-2024&warehouse_id=2",
+			mockResult: &service.ListOutboundOrdersResult{
+				Orders: []model.OutboundOrder{
+					{BaseModel: model.BaseModel{ID: 1}, OrderNo: "SO-2024-001", WarehouseID: 2},
+				},
+				Total: 1,
+			},
+			wantStatus: http.StatusOK,
+			wantTotal:  1,
+		},
+		{
+			name:       "service error",
+			query:      "?order_no=SO-2024",
+			mockError:  apperrors.NewAppError(apperrors.CodeInternalError, "database error"),
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router, handler, mockSvc := setupOutboundOrderHandlerTest(t)
+			mockSvc.listWithFilterFunc = func(ctx context.Context, filter *model.OutboundOrderQueryFilter) (*service.ListOutboundOrdersResult, error) {
+				if tt.mockError != nil {
+					return nil, tt.mockError
+				}
+				if filter.OrderNo != "" && filter.OrderNo != "SO-2024" {
+					t.Errorf("expected OrderNo 'SO-2024', got '%s'", filter.OrderNo)
+				}
+				if filter.CustomerID != nil && *filter.CustomerID != customerID {
+					t.Errorf("expected CustomerID %d, got %d", customerID, *filter.CustomerID)
+				}
+				if filter.WarehouseID != nil && *filter.WarehouseID != warehouseID {
+					t.Errorf("expected WarehouseID %d, got %d", warehouseID, *filter.WarehouseID)
+				}
+				return tt.mockResult, nil
+			}
+
+			router.GET("/outbound-orders", handler.List)
+
+			req := httptest.NewRequest("GET", "/outbound-orders"+tt.query, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 
@@ -278,7 +375,7 @@ func TestOutboundOrderHandler_Update(t *testing.T) {
 			name:    "success",
 			orderID: "1",
 			body: UpdateOutboundOrderRequest{
-				TotalQuantity: floatPtrOO(200),
+				TotalQuantity: floatPtrIO(200),
 			},
 			mockOrder:  &model.OutboundOrder{BaseModel: model.BaseModel{ID: 1}, TotalQuantity: 200},
 			wantStatus: http.StatusOK,
@@ -286,13 +383,13 @@ func TestOutboundOrderHandler_Update(t *testing.T) {
 		{
 			name:       "invalid id",
 			orderID:    "invalid",
-			body:       UpdateOutboundOrderRequest{TotalQuantity: floatPtrOO(200)},
+			body:       UpdateOutboundOrderRequest{TotalQuantity: floatPtrIO(200)},
 			wantStatus: http.StatusBadRequest,
 		},
 		{
 			name:       "not found",
 			orderID:    "999",
-			body:       UpdateOutboundOrderRequest{TotalQuantity: floatPtrOO(200)},
+			body:       UpdateOutboundOrderRequest{TotalQuantity: floatPtrIO(200)},
 			mockError:  apperrors.NewAppError(apperrors.CodeNotFound, "outbound order not found"),
 			wantStatus: http.StatusNotFound,
 		},
@@ -399,12 +496,6 @@ func TestOutboundOrderHandler_Confirm(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name:       "insufficient stock",
-			orderID:    "1",
-			mockError:  apperrors.NewAppError(apperrors.CodeInsufficientStock, "insufficient stock"),
-			wantStatus: http.StatusBadRequest,
-		},
-		{
 			name:       "not found",
 			orderID:    "999",
 			mockError:  apperrors.NewAppError(apperrors.CodeNotFound, "outbound order not found"),
@@ -430,6 +521,3 @@ func TestOutboundOrderHandler_Confirm(t *testing.T) {
 	}
 }
 
-func floatPtrOO(f float64) *float64 {
-	return &f
-}

@@ -349,7 +349,7 @@ func (m *mockWarehouseService) GetByID(ctx context.Context, id int64) (*model.Wa
 	return &model.Warehouse{}, nil
 }
 
-func (m *mockWarehouseService) List(ctx context.Context, page, pageSize int) (*service.ListWarehousesResult, error) {
+func (m *mockWarehouseService) List(ctx context.Context, filter *service.WarehouseQueryFilter) (*service.ListWarehousesResult, error) {
 	return &service.ListWarehousesResult{}, nil
 }
 
@@ -393,7 +393,7 @@ func (m *mockCategoryService) GetByID(ctx context.Context, id int64) (*model.Cat
 	return &model.Category{}, nil
 }
 
-func (m *mockCategoryService) List(ctx context.Context, page, pageSize int, parentID int64) (*service.ListCategoriesResult, error) {
+func (m *mockCategoryService) List(ctx context.Context, filter *service.CategoryQueryFilter) (*service.ListCategoriesResult, error) {
 	return &service.ListCategoriesResult{}, nil
 }
 
@@ -437,7 +437,7 @@ func (m *mockInventoryService) GetByID(ctx context.Context, id int64) (*model.In
 	return &model.Inventory{}, nil
 }
 
-func (m *mockInventoryService) List(ctx context.Context, page, pageSize int, warehouseID, productID int64) (*service.ListInventoriesResult, error) {
+func (m *mockInventoryService) List(ctx context.Context, filter *model.InventoryQueryFilter) (*service.ListInventoriesResult, error) {
 	return &service.ListInventoriesResult{}, nil
 }
 
@@ -467,7 +467,7 @@ func (m *mockSupplierService) GetByID(ctx context.Context, id int64) (*model.Sup
 	return &model.Supplier{}, nil
 }
 
-func (m *mockSupplierService) List(ctx context.Context, page, pageSize int, keyword string) (*service.ListSuppliersResult, error) {
+func (m *mockSupplierService) List(ctx context.Context, filter *service.SupplierQueryFilter) (*service.ListSuppliersResult, error) {
 	return &service.ListSuppliersResult{}, nil
 }
 
@@ -489,7 +489,7 @@ func (m *mockCustomerService) GetByID(ctx context.Context, id int64) (*model.Cus
 	return &model.Customer{}, nil
 }
 
-func (m *mockCustomerService) List(ctx context.Context, page, pageSize int, keyword string) (*service.ListCustomersResult, error) {
+func (m *mockCustomerService) List(ctx context.Context, filter *service.CustomerQueryFilter) (*service.ListCustomersResult, error) {
 	return &service.ListCustomersResult{}, nil
 }
 
@@ -527,6 +527,10 @@ func (m *mockInboundOrderService) Confirm(ctx context.Context, id int64) (*model
 	return &model.InboundOrder{}, nil
 }
 
+func (m *mockInboundOrderService) ListWithFilter(ctx context.Context, filter *model.InboundOrderQueryFilter) (*service.ListInboundOrdersResult, error) {
+	return &service.ListInboundOrdersResult{}, nil
+}
+
 type mockOutboundOrderService struct{}
 
 func (m *mockOutboundOrderService) Create(ctx context.Context, input *service.CreateOutboundOrderInput) (*model.OutboundOrder, error) {
@@ -551,6 +555,10 @@ func (m *mockOutboundOrderService) Delete(ctx context.Context, id int64) error {
 
 func (m *mockOutboundOrderService) Confirm(ctx context.Context, id int64) (*model.OutboundOrder, error) {
 	return &model.OutboundOrder{}, nil
+}
+
+func (m *mockOutboundOrderService) ListWithFilter(ctx context.Context, filter *model.OutboundOrderQueryFilter) (*service.ListOutboundOrdersResult, error) {
+	return &service.ListOutboundOrdersResult{}, nil
 }
 
 type mockStockTransferService struct{}
@@ -579,6 +587,10 @@ func (m *mockStockTransferService) Confirm(ctx context.Context, id int64) (*mode
 	return &model.StockTransfer{}, nil
 }
 
+func (m *mockStockTransferService) ListWithFilter(ctx context.Context, filter *model.StockTransferQueryFilter) (*service.ListStockTransfersResult, error) {
+	return &service.ListStockTransfersResult{}, nil
+}
+
 type mockAuditLogService struct{}
 
 func (m *mockAuditLogService) GetByID(ctx context.Context, id int64) (*model.AuditLog, error) {
@@ -587,4 +599,8 @@ func (m *mockAuditLogService) GetByID(ctx context.Context, id int64) (*model.Aud
 
 func (m *mockAuditLogService) List(ctx context.Context, filter *service.AuditLogQueryFilter) (*service.AuditLogListResult, error) {
 	return &service.AuditLogListResult{}, nil
+}
+
+func (m *mockAuditLogService) GetTableNames(ctx context.Context) ([]string, error) {
+	return []string{}, nil
 }

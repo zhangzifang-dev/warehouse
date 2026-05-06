@@ -11,7 +11,7 @@ import (
 type InventoryRepository interface {
 	Create(ctx context.Context, inventory *model.Inventory) error
 	GetByID(ctx context.Context, id int64) (*model.Inventory, error)
-	List(ctx context.Context, page, pageSize int, warehouseID, productID int64) ([]model.Inventory, int, error)
+	List(ctx context.Context, filter *model.InventoryQueryFilter) ([]model.Inventory, int, error)
 	Update(ctx context.Context, inventory *model.Inventory) error
 	Delete(ctx context.Context, id int64) error
 	GetByWarehouseAndProduct(ctx context.Context, warehouseID, productID int64, batchNo string) (*model.Inventory, error)
@@ -113,18 +113,18 @@ func (s *InventoryService) GetByID(ctx context.Context, id int64) (*model.Invent
 	return inventory, nil
 }
 
-func (s *InventoryService) List(ctx context.Context, page, pageSize int, warehouseID, productID int64) (*ListInventoriesResult, error) {
-	if page < 1 {
-		page = 1
+func (s *InventoryService) List(ctx context.Context, filter *model.InventoryQueryFilter) (*ListInventoriesResult, error) {
+	if filter.Page < 1 {
+		filter.Page = 1
 	}
-	if pageSize < 1 {
-		pageSize = 10
+	if filter.PageSize < 1 {
+		filter.PageSize = 10
 	}
-	if pageSize > 100 {
-		pageSize = 100
+	if filter.PageSize > 100 {
+		filter.PageSize = 100
 	}
 
-	inventories, total, err := s.inventoryRepo.List(ctx, page, pageSize, warehouseID, productID)
+	inventories, total, err := s.inventoryRepo.List(ctx, filter)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list inventories")
 	}

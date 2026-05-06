@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/mysqldialect"
@@ -84,6 +85,49 @@ func TestInboundOrderRepository_Delete(t *testing.T) {
 	err := repo.Delete(ctx, 1)
 	if err == nil {
 		t.Error("Delete() should return error with mock DB")
+	}
+}
+
+func TestInboundOrderRepository_ListWithFilter(t *testing.T) {
+	repo, _, ctx := setupInboundOrderTest(t)
+	supplierID := int64(1)
+	warehouseID := int64(1)
+	quantityMin := 10.0
+	quantityMax := 100.0
+	startTime := time.Now()
+	endTime := time.Now().Add(24 * time.Hour)
+
+	filter := &model.InboundOrderQueryFilter{
+		OrderNo:        "PO-2024",
+		SupplierID:     &supplierID,
+		WarehouseID:    &warehouseID,
+		QuantityMin:    &quantityMin,
+		QuantityMax:    &quantityMax,
+		CreatedAtStart: &startTime,
+		CreatedAtEnd:   &endTime,
+		Page:           1,
+		PageSize:       10,
+	}
+
+	_, _, err := repo.ListWithFilter(ctx, filter)
+	if err == nil {
+		t.Error("ListWithFilter() should return error with mock DB")
+	}
+}
+
+func TestInboundOrderRepository_ListWithFilter_PartialFilters(t *testing.T) {
+	repo, _, ctx := setupInboundOrderTest(t)
+	supplierID := int64(1)
+
+	filter := &model.InboundOrderQueryFilter{
+		SupplierID: &supplierID,
+		Page:       1,
+		PageSize:   10,
+	}
+
+	_, _, err := repo.ListWithFilter(ctx, filter)
+	if err == nil {
+		t.Error("ListWithFilter() should return error with mock DB")
 	}
 }
 

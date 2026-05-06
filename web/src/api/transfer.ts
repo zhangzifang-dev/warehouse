@@ -2,10 +2,18 @@ import api from './client'
 import type { StockTransfer, CreateStockTransferRequest } from '../types/order'
 import type { PaginatedResponse } from '../types/warehouse'
 
+export interface StockTransferFilter {
+  order_no?: string
+  source_warehouse_id?: number
+  target_warehouse_id?: number
+  created_at_start?: string
+  created_at_end?: string
+}
+
 export const transferApi = {
-  list: async (page = 1, size = 10): Promise<PaginatedResponse<StockTransfer>> => {
+  list: async (page = 1, size = 10, filter?: StockTransferFilter): Promise<PaginatedResponse<StockTransfer>> => {
     const response = await api.get<PaginatedResponse<StockTransfer>>('/stock-transfers', {
-      params: { page, size }
+      params: { page, size, ...filter }
     })
     return response.data
   },

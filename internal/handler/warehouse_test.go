@@ -18,16 +18,16 @@ import (
 )
 
 type mockWarehouseService struct {
-	listFunc    func(ctx context.Context, page, pageSize int) (*service.ListWarehousesResult, error)
+	listFunc    func(ctx context.Context, filter *service.WarehouseQueryFilter) (*service.ListWarehousesResult, error)
 	getByIDFunc func(ctx context.Context, id int64) (*model.Warehouse, error)
 	createFunc  func(ctx context.Context, input *service.CreateWarehouseInput) (*model.Warehouse, error)
 	updateFunc  func(ctx context.Context, id int64, input *service.UpdateWarehouseInput) (*model.Warehouse, error)
 	deleteFunc  func(ctx context.Context, id int64) error
 }
 
-func (m *mockWarehouseService) List(ctx context.Context, page, pageSize int) (*service.ListWarehousesResult, error) {
+func (m *mockWarehouseService) List(ctx context.Context, filter *service.WarehouseQueryFilter) (*service.ListWarehousesResult, error) {
 	if m.listFunc != nil {
-		return m.listFunc(ctx, page, pageSize)
+		return m.listFunc(ctx, filter)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -117,7 +117,7 @@ func TestWarehouseHandler_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router, handler, mockSvc := setupWarehouseHandlerTest(t)
-			mockSvc.listFunc = func(ctx context.Context, page, pageSize int) (*service.ListWarehousesResult, error) {
+			mockSvc.listFunc = func(ctx context.Context, filter *service.WarehouseQueryFilter) (*service.ListWarehousesResult, error) {
 				if tt.mockError != nil {
 					return nil, tt.mockError
 				}

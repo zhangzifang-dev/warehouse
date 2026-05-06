@@ -6,8 +6,8 @@ import (
 
 	"warehouse/internal/middleware"
 	"warehouse/internal/model"
-	"warehouse/internal/pkg/response"
 	apperrors "warehouse/internal/pkg/errors"
+	"warehouse/internal/pkg/response"
 	"warehouse/internal/service"
 
 	"github.com/gin-gonic/gin"
@@ -40,7 +40,7 @@ type WarehouseListResponse struct {
 type WarehouseService interface {
 	Create(ctx context.Context, input *service.CreateWarehouseInput) (*model.Warehouse, error)
 	GetByID(ctx context.Context, id int64) (*model.Warehouse, error)
-	List(ctx context.Context, page, pageSize int) (*service.ListWarehousesResult, error)
+	List(ctx context.Context, filter *service.WarehouseQueryFilter) (*service.ListWarehousesResult, error)
 	Update(ctx context.Context, id int64, input *service.UpdateWarehouseInput) (*model.Warehouse, error)
 	Delete(ctx context.Context, id int64) error
 }
@@ -103,8 +103,15 @@ func (h *WarehouseHandler) GetByID(c *gin.Context) {
 func (h *WarehouseHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
+	name := c.Query("name")
 
-	result, err := h.warehouseService.List(c.Request.Context(), page, pageSize)
+	filter := &service.WarehouseQueryFilter{
+		Name:     name,
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	result, err := h.warehouseService.List(c.Request.Context(), filter)
 	if err != nil {
 		handleWarehouseError(c, err)
 		return

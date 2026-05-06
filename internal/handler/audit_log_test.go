@@ -33,6 +33,10 @@ func (m *mockAuditLogService) List(ctx context.Context, filter *service.AuditLog
 	return nil, errors.New("not implemented")
 }
 
+func (m *mockAuditLogService) GetTableNames(ctx context.Context) ([]string, error) {
+	return []string{}, nil
+}
+
 func TestAuditLogHandler_List_Success(t *testing.T) {
 	mockSvc := &mockAuditLogService{
 		listFunc: func(ctx context.Context, filter *service.AuditLogQueryFilter) (*service.AuditLogListResult, error) {
@@ -98,8 +102,8 @@ func TestAuditLogHandler_List_WithFilters(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Errorf("expected status 200, got %d", w.Code)
 	}
-	if capturedFilter.TableName != "users" {
-		t.Errorf("expected table_name 'users', got '%s'", capturedFilter.TableName)
+	if len(capturedFilter.TableName) != 1 || capturedFilter.TableName[0] != "users" {
+		t.Errorf("expected table_name ['users'], got '%v'", capturedFilter.TableName)
 	}
 	if capturedFilter.RecordID == nil || *capturedFilter.RecordID != 1 {
 		t.Errorf("expected record_id 1, got %v", capturedFilter.RecordID)
@@ -260,7 +264,7 @@ func TestRegisterAuditLogRoutes(t *testing.T) {
 	RegisterAuditLogRoutes(router.Group("/api"), handler)
 
 	routes := router.Routes()
-	if len(routes) != 2 {
-		t.Errorf("expected 2 routes, got %d", len(routes))
+	if len(routes) != 3 {
+		t.Errorf("expected 3 routes, got %d", len(routes))
 	}
 }

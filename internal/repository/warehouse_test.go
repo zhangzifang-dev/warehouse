@@ -53,7 +53,76 @@ func TestWarehouseRepository_GetByCode_Query(t *testing.T) {
 
 func TestWarehouseRepository_List_Query(t *testing.T) {
 	repo, _, ctx := setupWarehouseTest(t)
-	_, _, err := repo.List(ctx, 1, 10)
+	filter := &WarehouseQueryFilter{Page: 1, PageSize: 10}
+	_, _, err := repo.List(ctx, filter)
+	if err == nil {
+		t.Error("List() should return error with mock DB")
+	}
+}
+
+func TestWarehouseRepository_List_WithFilter(t *testing.T) {
+	repo, _, ctx := setupWarehouseTest(t)
+	filter := &WarehouseQueryFilter{
+		Name:     "Main",
+		Page:     1,
+		PageSize: 10,
+	}
+	_, _, err := repo.List(ctx, filter)
+	if err == nil {
+		t.Error("List() should return error with mock DB")
+	}
+}
+
+func TestWarehouseRepository_List_WithSpecialCharacters(t *testing.T) {
+	repo, _, ctx := setupWarehouseTest(t)
+	tests := []struct {
+		name      string
+		filter    *WarehouseQueryFilter
+	}{
+		{
+			name: "percent sign",
+			filter: &WarehouseQueryFilter{
+				Name:     "Warehouse%",
+				Page:     1,
+				PageSize: 10,
+			},
+		},
+		{
+			name: "underscore",
+			filter: &WarehouseQueryFilter{
+				Name:     "Warehouse_",
+				Page:     1,
+				PageSize: 10,
+			},
+		},
+		{
+			name: "single quote",
+			filter: &WarehouseQueryFilter{
+				Name:     "Warehouse's",
+				Page:     1,
+				PageSize: 10,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, err := repo.List(ctx, tt.filter)
+			if err == nil {
+				t.Error("List() should return error with mock DB")
+			}
+		})
+	}
+}
+
+func TestWarehouseRepository_List_EmptyFilter(t *testing.T) {
+	repo, _, ctx := setupWarehouseTest(t)
+	filter := &WarehouseQueryFilter{
+		Name:     "",
+		Page:     1,
+		PageSize: 10,
+	}
+	_, _, err := repo.List(ctx, filter)
 	if err == nil {
 		t.Error("List() should return error with mock DB")
 	}

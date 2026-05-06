@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"warehouse/internal/model"
 	apperrors "warehouse/internal/pkg/errors"
@@ -18,17 +19,25 @@ import (
 )
 
 type mockStockTransferService struct {
-	listFunc    func(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) (*service.ListStockTransfersResult, error)
-	getByIDFunc func(ctx context.Context, id int64) (*model.StockTransfer, error)
-	createFunc  func(ctx context.Context, input *service.CreateStockTransferInput) (*model.StockTransfer, error)
-	updateFunc  func(ctx context.Context, id int64, input *service.UpdateStockTransferInput) (*model.StockTransfer, error)
-	deleteFunc  func(ctx context.Context, id int64) error
-	confirmFunc func(ctx context.Context, id int64) (*model.StockTransfer, error)
+	listFunc            func(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) (*service.ListStockTransfersResult, error)
+	listWithFilterFunc  func(ctx context.Context, filter *model.StockTransferQueryFilter) (*service.ListStockTransfersResult, error)
+	getByIDFunc         func(ctx context.Context, id int64) (*model.StockTransfer, error)
+	createFunc          func(ctx context.Context, input *service.CreateStockTransferInput) (*model.StockTransfer, error)
+	updateFunc          func(ctx context.Context, id int64, input *service.UpdateStockTransferInput) (*model.StockTransfer, error)
+	deleteFunc          func(ctx context.Context, id int64) error
+	confirmFunc         func(ctx context.Context, id int64) (*model.StockTransfer, error)
 }
 
 func (m *mockStockTransferService) List(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) (*service.ListStockTransfersResult, error) {
 	if m.listFunc != nil {
 		return m.listFunc(ctx, page, pageSize, fromWarehouseID, toWarehouseID, status)
+	}
+	return nil, errors.New("not implemented")
+}
+
+func (m *mockStockTransferService) ListWithFilter(ctx context.Context, filter *model.StockTransferQueryFilter) (*service.ListStockTransfersResult, error) {
+	if m.listWithFilterFunc != nil {
+		return m.listWithFilterFunc(ctx, filter)
 	}
 	return nil, errors.New("not implemented")
 }
@@ -93,8 +102,8 @@ func TestStockTransferHandler_List(t *testing.T) {
 		{
 			name: "success with default pagination",
 			mockTransfers: []model.StockTransfer{
-				{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", FromWarehouseID: 1, ToWarehouseID: 2, TotalQuantity: 100},
-				{BaseModel: model.BaseModel{ID: 2}, OrderNo: "ST-2024-002", FromWarehouseID: 1, ToWarehouseID: 3, TotalQuantity: 200},
+				{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", SourceWarehouseID: 1, TargetWarehouseID: 2},
+				{BaseModel: model.BaseModel{ID: 2}, OrderNo: "ST-2024-002", SourceWarehouseID: 1, TargetWarehouseID: 3},
 			},
 			mockTotal:  2,
 			wantStatus: http.StatusOK,
@@ -138,7 +147,7 @@ func TestStockTransferHandler_List(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			router, handler, mockSvc := setupStockTransferHandlerTest(t)
-			mockSvc.listFunc = func(ctx context.Context, page, pageSize int, fromWarehouseID, toWarehouseID, status int) (*service.ListStockTransfersResult, error) {
+			mockSvc.listWithFilterFunc = func(ctx context.Context, filter *model.StockTransferQueryFilter) (*service.ListStockTransfersResult, error) {
 				if tt.mockError != nil {
 					return nil, tt.mockError
 				}
@@ -177,7 +186,7 @@ func TestStockTransferHandler_GetByID(t *testing.T) {
 		{
 			name:         "success",
 			transferID:   "1",
-			mockTransfer: &model.StockTransfer{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", FromWarehouseID: 1, ToWarehouseID: 2, TotalQuantity: 100},
+			mockTransfer: &model.StockTransfer{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", SourceWarehouseID: 1, TargetWarehouseID: 2},
 			wantStatus:   http.StatusOK,
 		},
 		{
@@ -223,11 +232,11 @@ func TestStockTransferHandler_Create(t *testing.T) {
 			name: "success",
 			body: CreateStockTransferRequest{
 				OrderNo:         "ST-2024-001",
-				FromWarehouseID: 1,
-				ToWarehouseID:   2,
-				TotalQuantity:   100,
+				SourceWarehouseID: 1,
+				TargetWarehouseID:   2,
+				TotalQty:   100,
 			},
-			mockTransfer: &model.StockTransfer{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", FromWarehouseID: 1, ToWarehouseID: 2, TotalQuantity: 100},
+			mockTransfer: &model.StockTransfer{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", SourceWarehouseID: 1, TargetWarehouseID: 2},
 			wantStatus:   http.StatusOK,
 		},
 		{
@@ -281,21 +290,21 @@ func TestStockTransferHandler_Update(t *testing.T) {
 			name:       "success",
 			transferID: "1",
 			body: UpdateStockTransferRequest{
-				TotalQuantity: floatPtrSTH(200),
+				TotalQty: floatPtrSTH(200),
 			},
-			mockTransfer: &model.StockTransfer{BaseModel: model.BaseModel{ID: 1}, TotalQuantity: 200},
+			mockTransfer: &model.StockTransfer{BaseModel: model.BaseModel{ID: 1}},
 			wantStatus:   http.StatusOK,
 		},
 		{
 			name:       "invalid id",
 			transferID: "invalid",
-			body:       UpdateStockTransferRequest{TotalQuantity: floatPtrSTH(200)},
+			body:       UpdateStockTransferRequest{TotalQty: floatPtrSTH(200)},
 			wantStatus: http.StatusBadRequest,
 		},
 		{
 			name:       "not found",
 			transferID: "999",
-			body:       UpdateStockTransferRequest{TotalQuantity: floatPtrSTH(200)},
+			body:       UpdateStockTransferRequest{TotalQty: floatPtrSTH(200)},
 			mockError:  apperrors.NewAppError(apperrors.CodeNotFound, "stock transfer not found"),
 			wantStatus: http.StatusNotFound,
 		},
@@ -429,4 +438,86 @@ func TestStockTransferHandler_Confirm(t *testing.T) {
 
 func floatPtrSTH(f float64) *float64 {
 	return &f
+}
+
+func TestStockTransferHandler_ListWithFilter(t *testing.T) {
+	now := time.Now()
+	sourceWarehouseID := int64(1)
+	targetWarehouseID := int64(2)
+
+	tests := []struct {
+		name       string
+		query      string
+		mockResult *service.ListStockTransfersResult
+		mockError  error
+		wantStatus int
+		wantTotal  int
+	}{
+		{
+			name:  "success with all filters",
+			query: "?order_no=ST-2024&source_warehouse_id=1&target_warehouse_id=2&created_at_start=" + now.Format(time.RFC3339) + "&created_at_end=" + now.Add(24*time.Hour).Format(time.RFC3339),
+			mockResult: &service.ListStockTransfersResult{
+				Transfers: []model.StockTransfer{
+					{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001"},
+				},
+				Total: 1,
+			},
+			wantStatus: http.StatusOK,
+			wantTotal:  1,
+		},
+		{
+			name:  "success with partial filters",
+			query: "?order_no=ST-2024&source_warehouse_id=1",
+			mockResult: &service.ListStockTransfersResult{
+				Transfers: []model.StockTransfer{
+					{BaseModel: model.BaseModel{ID: 1}, OrderNo: "ST-2024-001", SourceWarehouseID: 1},
+				},
+				Total: 1,
+			},
+			wantStatus: http.StatusOK,
+			wantTotal:  1,
+		},
+		{
+			name:       "service error",
+			query:      "?order_no=ST-2024",
+			mockError:  apperrors.NewAppError(apperrors.CodeInternalError, "database error"),
+			wantStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			router, handler, mockSvc := setupStockTransferHandlerTest(t)
+			mockSvc.listWithFilterFunc = func(ctx context.Context, filter *model.StockTransferQueryFilter) (*service.ListStockTransfersResult, error) {
+				if tt.mockError != nil {
+					return nil, tt.mockError
+				}
+				if filter.OrderNo != "" && filter.OrderNo != "ST-2024" {
+					t.Errorf("expected OrderNo 'ST-2024', got '%s'", filter.OrderNo)
+				}
+				if filter.SourceWarehouseID != nil && *filter.SourceWarehouseID != sourceWarehouseID {
+					t.Errorf("expected SourceWarehouseID %d, got %d", sourceWarehouseID, *filter.SourceWarehouseID)
+				}
+				if filter.TargetWarehouseID != nil && *filter.TargetWarehouseID != targetWarehouseID {
+					t.Errorf("expected TargetWarehouseID %d, got %d", targetWarehouseID, *filter.TargetWarehouseID)
+				}
+				return tt.mockResult, nil
+			}
+
+			router.GET("/stock-transfers", handler.List)
+
+			req := httptest.NewRequest("GET", "/stock-transfers"+tt.query, nil)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, tt.wantStatus, w.Code)
+			if tt.wantStatus == http.StatusOK {
+				var resp map[string]interface{}
+				err := json.Unmarshal(w.Body.Bytes(), &resp)
+				assert.NoError(t, err)
+				data := resp["data"].(map[string]interface{})
+				assert.Equal(t, float64(tt.wantTotal), data["total"])
+			}
+		})
+	}
 }

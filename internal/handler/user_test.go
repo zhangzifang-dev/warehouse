@@ -79,8 +79,6 @@ func TestUserHandler_Create_Success(t *testing.T) {
 			return &model.User{
 				BaseModel: model.BaseModel{ID: 1},
 				Username:  input.Username,
-				Nickname:  input.Nickname,
-				Email:     input.Email,
 			}, nil
 		},
 	}
@@ -92,8 +90,6 @@ func TestUserHandler_Create_Success(t *testing.T) {
 	body := map[string]interface{}{
 		"username": "testuser",
 		"password": "password123",
-		"nickname": "Test User",
-		"email":    "test@example.com",
 	}
 	jsonBody, _ := json.Marshal(body)
 	req := httptest.NewRequest(http.MethodPost, "/users", bytes.NewBuffer(jsonBody))
@@ -167,7 +163,6 @@ func TestUserHandler_GetByID_Success(t *testing.T) {
 			return &model.User{
 				BaseModel: model.BaseModel{ID: id},
 				Username:  "testuser",
-				Nickname:  "Test User",
 			}, nil
 		},
 	}
@@ -313,8 +308,6 @@ func TestUserHandler_Update_Success(t *testing.T) {
 			return &model.User{
 				BaseModel: model.BaseModel{ID: id},
 				Username:  "testuser",
-				Nickname:  input.Nickname,
-				Email:     input.Email,
 			}, nil
 		},
 	}
@@ -323,7 +316,7 @@ func TestUserHandler_Update_Success(t *testing.T) {
 	router := setupTestRouter()
 	router.PUT("/users/:id", handler.Update)
 
-	body := map[string]string{"nickname": "New Nickname", "email": "new@example.com"}
+	body := map[string]interface{}{"status": 1}
 	jsonBody, _ := json.Marshal(body)
 	req := httptest.NewRequest(http.MethodPut, "/users/1", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")
@@ -347,7 +340,7 @@ func TestUserHandler_Update_NotFound(t *testing.T) {
 	router := setupTestRouter()
 	router.PUT("/users/:id", handler.Update)
 
-	body := map[string]string{"nickname": "New Nickname"}
+	body := map[string]interface{}{"status": 1}
 	jsonBody, _ := json.Marshal(body)
 	req := httptest.NewRequest(http.MethodPut, "/users/999", bytes.NewBuffer(jsonBody))
 	req.Header.Set("Content-Type", "application/json")

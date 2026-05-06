@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"testing"
+	"time"
 
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/mysqldialect"
@@ -106,4 +107,47 @@ func setupOutboundOrderTest(t *testing.T) (*OutboundOrderRepository, *bun.DB, co
 	repo := NewOutboundOrderRepository(db)
 	ctx := context.Background()
 	return repo, db, ctx
+}
+
+func TestOutboundOrderRepository_ListWithFilter(t *testing.T) {
+	repo, _, ctx := setupOutboundOrderTest(t)
+	customerID := int64(1)
+	warehouseID := int64(1)
+	quantityMin := 10.0
+	quantityMax := 100.0
+	startTime := time.Now()
+	endTime := time.Now().Add(24 * time.Hour)
+
+	filter := &model.OutboundOrderQueryFilter{
+		OrderNo:        "SO-2024",
+		CustomerID:     &customerID,
+		WarehouseID:    &warehouseID,
+		QuantityMin:    &quantityMin,
+		QuantityMax:    &quantityMax,
+		CreatedAtStart: &startTime,
+		CreatedAtEnd:   &endTime,
+		Page:           1,
+		PageSize:       10,
+	}
+
+	_, _, err := repo.ListWithFilter(ctx, filter)
+	if err == nil {
+		t.Error("ListWithFilter() should return error with mock DB")
+	}
+}
+
+func TestOutboundOrderRepository_ListWithFilter_PartialFilters(t *testing.T) {
+	repo, _, ctx := setupOutboundOrderTest(t)
+	customerID := int64(1)
+
+	filter := &model.OutboundOrderQueryFilter{
+		CustomerID: &customerID,
+		Page:       1,
+		PageSize:   10,
+	}
+
+	_, _, err := repo.ListWithFilter(ctx, filter)
+	if err == nil {
+		t.Error("ListWithFilter() should return error with mock DB")
+	}
 }

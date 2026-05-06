@@ -2,10 +2,13 @@ import React, { useState } from 'react'
 import { Table, Button, Space, Modal, Form, Input, InputNumber, Select, message, Popconfirm, Tag } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, RightOutlined, DownOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { categoryApi } from '../../api/category'
+import { categoryApi, type CategoryFilter } from '../../api/category'
 import type { Category, CreateCategoryRequest, UpdateCategoryRequest } from '../../types/product'
 
 export function CategoryList() {
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [filter, setFilter] = useState<CategoryFilter>({})
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form] = Form.useForm()
@@ -13,8 +16,8 @@ export function CategoryList() {
   const [messageApi, contextHolder] = message.useMessage()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['categories'],
-    queryFn: () => categoryApi.list(1, 100)
+    queryKey: ['categories', page, pageSize, filter.name],
+    queryFn: () => categoryApi.list(page, pageSize, filter)
   })
 
   const createMutation = useMutation({
@@ -71,6 +74,11 @@ export function CategoryList() {
     } else {
       createMutation.mutate(values as CreateCategoryRequest)
     }
+  }
+
+  const handleNameFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFilter(prev => ({ ...prev, name: e.target.value || undefined }))
+    setPage(1)
   }
 
   const buildTree = (items: Category[]): Category[] => {
@@ -159,16 +167,35 @@ export function CategoryList() {
     <>
       {contextHolder}
       <div style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
-          新增分类
-        </Button>
+        <Space>
+          <Input
+            placeholder="分类名称"
+            style={{ width: 150 }}
+            value={filter.name || ''}
+            onChange={handleNameFilterChange}
+            allowClear
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+            新增分类
+          </Button>
+        </Space>
       </div>
       <Table
         columns={columns}
         dataSource={treeData}
         rowKey="id"
         loading={isLoading}
-        pagination={false}
+        pagination={{
+          current: page,
+          pageSize,
+          total: data?.total,
+          showSizeChanger: true,
+          showTotal: (total) => `共 ${total} 条`,
+          onChange: (p, ps) => {
+            setPage(p)
+            setPageSize(ps)
+          }
+        }}
         defaultExpandAllRows
         expandable={{
           expandIcon: customExpandIcon,

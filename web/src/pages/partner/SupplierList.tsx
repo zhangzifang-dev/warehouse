@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { Table, Button, Space, Modal, Form, Input, Select, message, Popconfirm, Tag, Row, Col } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { supplierApi } from '../../api/supplier'
+import { supplierApi, type SupplierFilter } from '../../api/supplier'
 import type { Supplier, CreateSupplierRequest, UpdateSupplierRequest } from '../../types/partner'
 
 export function SupplierList() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [filter, setFilter] = useState<SupplierFilter>({})
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [form] = Form.useForm()
@@ -15,8 +16,8 @@ export function SupplierList() {
   const [messageApi, contextHolder] = message.useMessage()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['suppliers', page, pageSize],
-    queryFn: () => supplierApi.list(page, pageSize)
+    queryKey: ['suppliers', page, pageSize, filter],
+    queryFn: () => supplierApi.list(page, pageSize, filter)
   })
 
   const createMutation = useMutation({
@@ -75,6 +76,11 @@ export function SupplierList() {
     }
   }
 
+  const handleFilterChange = (key: keyof SupplierFilter, value: string | number | undefined) => {
+    setFilter(prev => ({ ...prev, [key]: value || undefined }))
+    setPage(1)
+  }
+
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 80 },
     { title: '供应商编码', dataIndex: 'code', width: 120 },
@@ -114,9 +120,50 @@ export function SupplierList() {
     <>
       {contextHolder}
       <div style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
-          新增供应商
-        </Button>
+        <Space wrap>
+          <Input
+            placeholder="供应商编码"
+            style={{ width: 150 }}
+            value={filter.code || ''}
+            onChange={(e) => handleFilterChange('code', e.target.value)}
+            allowClear
+          />
+          <Input
+            placeholder="供应商名称"
+            style={{ width: 150 }}
+            value={filter.name || ''}
+            onChange={(e) => handleFilterChange('name', e.target.value)}
+            allowClear
+          />
+          <Input
+            placeholder="联系人"
+            style={{ width: 150 }}
+            value={filter.contact || ''}
+            onChange={(e) => handleFilterChange('contact', e.target.value)}
+            allowClear
+          />
+          <Input
+            placeholder="联系电话"
+            style={{ width: 150 }}
+            value={filter.phone || ''}
+            onChange={(e) => handleFilterChange('phone', e.target.value)}
+            allowClear
+          />
+          <Select
+            placeholder="状态"
+            style={{ width: 120 }}
+            value={filter.status}
+            onChange={(value) => handleFilterChange('status', value)}
+            allowClear
+            options={[
+              { label: '启用', value: 1 },
+              { label: '禁用', value: 0 }
+            ]}
+          />
+          <Button type="primary" icon={<PlusOutlined />} onClick={handleOpenCreate}>
+            新增供应商
+          </Button>
+        </Space>
       </div>
       <Table
         columns={columns}

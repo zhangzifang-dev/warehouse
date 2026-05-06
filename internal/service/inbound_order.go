@@ -13,6 +13,7 @@ type InboundOrderRepository interface {
 	GetByID(ctx context.Context, id int64) (*model.InboundOrder, error)
 	GetByOrderNo(ctx context.Context, orderNo string) (*model.InboundOrder, error)
 	List(ctx context.Context, page, pageSize int, warehouseID, status int) ([]model.InboundOrder, int, error)
+	ListWithFilter(ctx context.Context, filter *model.InboundOrderQueryFilter) ([]model.InboundOrder, int, error)
 	Update(ctx context.Context, order *model.InboundOrder) error
 	Delete(ctx context.Context, id int64) error
 }
@@ -127,6 +128,28 @@ func (s *InboundOrderService) List(ctx context.Context, page, pageSize int, ware
 	}
 
 	orders, total, err := s.orderRepo.List(ctx, page, pageSize, warehouseID, status)
+	if err != nil {
+		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list inbound orders")
+	}
+
+	return &ListInboundOrdersResult{
+		Orders: orders,
+		Total:  total,
+	}, nil
+}
+
+func (s *InboundOrderService) ListWithFilter(ctx context.Context, filter *model.InboundOrderQueryFilter) (*ListInboundOrdersResult, error) {
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.PageSize < 1 {
+		filter.PageSize = 10
+	}
+	if filter.PageSize > 100 {
+		filter.PageSize = 100
+	}
+
+	orders, total, err := s.orderRepo.ListWithFilter(ctx, filter)
 	if err != nil {
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list inbound orders")
 	}
