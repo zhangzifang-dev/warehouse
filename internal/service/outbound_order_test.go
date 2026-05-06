@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 	"errors"
 	"testing"
 
@@ -9,6 +10,7 @@ import (
 )
 
 type mockOutboundOrderRepository struct {
+	listWithFilterFunc   func(ctx context.Context, filter *model.OutboundOrderQueryFilter) ([]model.OutboundOrder, int, error)
 	createFunc       func(ctx context.Context, order *model.OutboundOrder) error
 	getByIDFunc      func(ctx context.Context, id int64) (*model.OutboundOrder, error)
 	getByOrderNoFunc func(ctx context.Context, orderNo string) (*model.OutboundOrder, error)
@@ -41,6 +43,13 @@ func (m *mockOutboundOrderRepository) GetByOrderNo(ctx context.Context, orderNo 
 func (m *mockOutboundOrderRepository) List(ctx context.Context, page, pageSize int, warehouseID, status int) ([]model.OutboundOrder, int, error) {
 	if m.listFunc != nil {
 		return m.listFunc(ctx, page, pageSize, warehouseID, status)
+	}
+	return nil, 0, errors.New("not implemented")
+}
+
+func (m *mockOutboundOrderRepository) ListWithFilter(ctx context.Context, filter *model.OutboundOrderQueryFilter) ([]model.OutboundOrder, int, error) {
+	if m.listWithFilterFunc != nil {
+		return m.listWithFilterFunc(ctx, filter)
 	}
 	return nil, 0, errors.New("not implemented")
 }
@@ -310,7 +319,7 @@ func TestOutboundOrderService_Confirm_Success(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, mockItemRepo, mockInventorySvc)
+	svc := NewOutboundOrderService(mockOrderRepo, mockItemRepo, mockInventorySvc, nil)
 
 	order, err := svc.Confirm(context.Background(), 1)
 
@@ -347,7 +356,7 @@ func TestOutboundOrderService_Confirm_InsufficientStock(t *testing.T) {
 		},
 	}
 
-	svc := NewOutboundOrderService(mockOrderRepo, mockItemRepo, mockInventorySvc)
+	svc := NewOutboundOrderService(mockOrderRepo, mockItemRepo, mockInventorySvc, nil)
 
 	_, err := svc.Confirm(context.Background(), 1)
 
@@ -435,4 +444,83 @@ func (m *mockInventoryServiceForOutbound) AdjustQuantity(ctx context.Context, in
 		return m.adjustQuantityFunc(ctx, input)
 	}
 	return nil, errors.New("not implemented")
+}
+
+func TestOutboundOrderService_ListWithFilter(t *testing.T) {
+	customerID := int64(1)
+	warehouseID := int64(1)
+	quantityMin := 10.0
+	quantityMax := 100.0
+	startTime := time.Now()
+	endTime := time.Now().Add(24 * time.Hour)
+
+	filter := &model.OutboundOrderQueryFilter{
+		OrderNo:        "SO-2024",
+		CustomerID:     &customerID,
+		WarehouseID:    &warehouseID,
+		QuantityMin:    &quantityMin,
+		QuantityMax:    &quantityMax,
+		CreatedAtStart: &startTime,
+		CreatedAtEnd:   &endTime,
+		Page:           1,
+		PageSize:       10,
+	}
+
+	mockOrderRepo := &mockOutboundOrderRepository{
+		listWithFilterFunc: func(ctx context.Context, f *model.OutboundOrderQueryFilter) ([]model.OutboundOrder, int, error) {
+			if f.OrderNo != "SO-2024" {
+				t.Errorf("expected OrderNo 'SO-2024', got '%s'", f.OrderNo)
+			}
+			if *f.CustomerID != 1 {
+				t.Errorf("expected CustomerID 1, got %d", *f.CustomerID)
+			}
+			if *f.WarehouseID != 1 {
+				t.Errorf("expected WarehouseID 1, got %d", *f.WarehouseID)
+			}
+			return []model.OutboundOrder{
+				{BaseModel: model.BaseModel{ID: 1}, OrderNo: "SO-2024-001", CustomerID: 1, WarehouseID: 1, TotalQuantity: 50},
+			}, 1, nil
+		},
+	}
+
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
+
+	result, err := svc.ListWithFilter(context.Background(), filter)
+
+	if err != nil {
+		t.Fatalf("ListWithFilter failed: %v", err)
+	}
+	if len(result.Orders) != 1 {
+		t.Errorf("expected 1 order, got %d", len(result.Orders))
+	}
+	if result.Total != 1 {
+		t.Errorf("expected total 1, got %d", result.Total)
+	}
+}
+
+func TestOutboundOrderService_ListWithFilter_Validation(t *testing.T) {
+	filter := &model.OutboundOrderQueryFilter{
+		Page:     0,
+		PageSize: 0,
+	}
+
+	mockOrderRepo := &mockOutboundOrderRepository{
+		listWithFilterFunc: func(ctx context.Context, f *model.OutboundOrderQueryFilter) ([]model.OutboundOrder, int, error) {
+			if f.Page != 1 {
+				t.Errorf("expected Page 1, got %d", f.Page)
+			}
+			if f.PageSize != 10 {
+				t.Errorf("expected PageSize 10, got %d", f.PageSize)
+			}
+			return []model.OutboundOrder{}, 0, nil
+		},
+	}
+
+	svc := NewOutboundOrderService(mockOrderRepo, nil, nil, nil)
+
+	_, err := svc.ListWithFilter(context.Background(), filter)
+
+	if err != nil {
+		t.Fatalf("ListWithFilter failed: %v", err)
+	}
 }

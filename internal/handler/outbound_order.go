@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"strconv"
+	"time"
 
 	"warehouse/internal/model"
 	"warehouse/internal/pkg/response"
@@ -40,6 +41,7 @@ type OutboundOrderService interface {
 	Create(ctx context.Context, input *service.CreateOutboundOrderInput) (*model.OutboundOrder, error)
 	GetByID(ctx context.Context, id int64) (*model.OutboundOrder, error)
 	List(ctx context.Context, page, pageSize int, warehouseID, status int) (*service.ListOutboundOrdersResult, error)
+	ListWithFilter(ctx context.Context, filter *model.OutboundOrderQueryFilter) (*service.ListOutboundOrdersResult, error)
 	Update(ctx context.Context, id int64, input *service.UpdateOutboundOrderInput) (*model.OutboundOrder, error)
 	Delete(ctx context.Context, id int64) error
 	Confirm(ctx context.Context, id int64) (*model.OutboundOrder, error)
@@ -94,14 +96,56 @@ func (h *OutboundOrderHandler) GetByID(c *gin.Context) {
 
 	response.Success(c, order)
 }
-
 func (h *OutboundOrderHandler) List(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
-	warehouseID, _ := strconv.ParseInt(c.Query("warehouse_id"), 10, 64)
-	status, _ := strconv.Atoi(c.Query("status"))
 
-	result, err := h.outboundOrderService.List(c.Request.Context(), page, pageSize, int(warehouseID), status)
+	filter := &model.OutboundOrderQueryFilter{
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	if orderNo := c.Query("order_no"); orderNo != "" {
+		filter.OrderNo = orderNo
+	}
+
+	if customerIDStr := c.Query("customer_id"); customerIDStr != "" {
+		if customerID, err := strconv.ParseInt(customerIDStr, 10, 64); err == nil {
+			filter.CustomerID = &customerID
+		}
+	}
+
+	if warehouseIDStr := c.Query("warehouse_id"); warehouseIDStr != "" {
+		if warehouseID, err := strconv.ParseInt(warehouseIDStr, 10, 64); err == nil {
+			filter.WarehouseID = &warehouseID
+		}
+	}
+
+	if quantityMinStr := c.Query("quantity_min"); quantityMinStr != "" {
+		if quantityMin, err := strconv.ParseFloat(quantityMinStr, 64); err == nil {
+			filter.QuantityMin = &quantityMin
+		}
+	}
+
+	if quantityMaxStr := c.Query("quantity_max"); quantityMaxStr != "" {
+		if quantityMax, err := strconv.ParseFloat(quantityMaxStr, 64); err == nil {
+			filter.QuantityMax = &quantityMax
+		}
+	}
+
+	if createdAtStartStr := c.Query("created_at_start"); createdAtStartStr != "" {
+		if createdAtStart, err := time.Parse(time.RFC3339, createdAtStartStr); err == nil {
+			filter.CreatedAtStart = &createdAtStart
+		}
+	}
+
+	if createdAtEndStr := c.Query("created_at_end"); createdAtEndStr != "" {
+		if createdAtEnd, err := time.Parse(time.RFC3339, createdAtEndStr); err == nil {
+			filter.CreatedAtEnd = &createdAtEnd
+		}
+	}
+
+	result, err := h.outboundOrderService.ListWithFilter(c.Request.Context(), filter)
 	if err != nil {
 		handleOutboundOrderError(c, err)
 		return

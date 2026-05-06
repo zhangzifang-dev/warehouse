@@ -13,6 +13,7 @@ type OutboundOrderRepository interface {
 	GetByID(ctx context.Context, id int64) (*model.OutboundOrder, error)
 	GetByOrderNo(ctx context.Context, orderNo string) (*model.OutboundOrder, error)
 	List(ctx context.Context, page, pageSize int, warehouseID, status int) ([]model.OutboundOrder, int, error)
+	ListWithFilter(ctx context.Context, filter *model.OutboundOrderQueryFilter) ([]model.OutboundOrder, int, error)
 	Update(ctx context.Context, order *model.OutboundOrder) error
 	Delete(ctx context.Context, id int64) error
 }
@@ -289,4 +290,26 @@ func (s *OutboundOrderService) Confirm(ctx context.Context, id int64) (*model.Ou
 	}
 
 	return order, nil
+}
+
+func (s *OutboundOrderService) ListWithFilter(ctx context.Context, filter *model.OutboundOrderQueryFilter) (*ListOutboundOrdersResult, error) {
+	if filter.Page < 1 {
+		filter.Page = 1
+	}
+	if filter.PageSize < 1 {
+		filter.PageSize = 10
+	}
+	if filter.PageSize > 100 {
+		filter.PageSize = 100
+	}
+
+	orders, total, err := s.orderRepo.ListWithFilter(ctx, filter)
+	if err != nil {
+		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to list outbound orders")
+	}
+
+	return &ListOutboundOrdersResult{
+		Orders: orders,
+		Total:  total,
+	}, nil
 }
