@@ -82,37 +82,9 @@
 [GIN-debug] GET    /api/v1/audit-logs/:id    --> warehouse/internal/handler.(*AuditLogHandler).GetByID-fm (5 handlers)
 [GIN-debug] GET    /assets/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
 [GIN-debug] HEAD   /assets/*filepath         --> github.com/gin-gonic/gin.(*RouterGroup).createStaticHandler.func1 (4 handlers)
-2026/05/08 22:35:26 Server starting on :8080
+2026/05/06 23:11:46 Server starting on :8080
 [GIN-debug] [WARNING] You trusted all proxies, this is NOT safe. We recommend you to set a value.
 Please check https://github.com/gin-gonic/gin/blob/master/docs/doc.md#dont-trust-all-proxies for details.
 [GIN-debug] Listening and serving HTTP on :8080
-[INFO] 2026/05/08 22:35:34 HEAD / 200 2.532688ms
-[INFO] 2026/05/08 22:35:42 POST /api/v1/auth/login 200 75.494749ms
-2026/05/08 22:35:42 ERROR listing inventories: Error 1054 (42S22): Unknown column 'inventories.deleted_at' in 'where clause'
-[INFO] 2026/05/08 22:35:42 GET /api/v1/inventory 500 2.806517ms
-[INFO] 2026/05/08 22:46:41 GET / 200 137.975µs
-[INFO] 2026/05/08 22:46:41 GET /assets/index-BbOnq3uF.js 304 192.37µs
-[INFO] 2026/05/08 22:46:41 GET /assets/index-C0ZRk0Gb.css 304 172.378µs
-[INFO] 2026/05/08 22:46:42 GET /favicon.svg 304 83.352µs
-[INFO] 2026/05/08 22:46:44 GET /api/v1/outbound-orders 401 125.028µs
-[INFO] 2026/05/08 22:46:44 GET /api/v1/warehouses 401 46.123µs
-[INFO] 2026/05/08 22:46:44 GET /api/v1/customers 401 84.145µs
-[INFO] 2026/05/08 22:46:44 GET /api/v1/products 401 55.731µs
-[INFO] 2026/05/08 22:46:44 GET /login 200 80.523µs
-[INFO] 2026/05/08 22:46:53 POST /api/v1/auth/login 200 81.954297ms
-[INFO] 2026/05/08 22:46:53 GET /api/v1/outbound-orders 200 2.871286ms
-[INFO] 2026/05/08 22:46:53 GET /api/v1/warehouses 200 7.049152ms
-[INFO] 2026/05/08 22:46:53 GET /api/v1/products 200 7.251136ms
-[INFO] 2026/05/08 22:46:53 GET /api/v1/customers 200 7.619011ms
-[INFO] 2026/05/08 22:46:55 GET /api/v1/warehouses 200 862.543µs
-[INFO] 2026/05/08 22:46:55 GET /api/v1/products 200 1.298945ms
-[INFO] 2026/05/08 22:46:55 GET /api/v1/inbound-orders 200 2.030166ms
-[INFO] 2026/05/08 22:46:55 GET /api/v1/suppliers 200 1.94518ms
-2026/05/08 22:46:56 ERROR listing inventories: Error 1054 (42S22): Unknown column 'inventories.deleted_at' in 'where clause'
-[INFO] 2026/05/08 22:46:56 GET /api/v1/inventory 500 899.864µs
-[INFO] 2026/05/08 22:46:56 GET /api/v1/warehouses 200 971.555µs
-[INFO] 2026/05/08 22:46:56 GET /api/v1/products 200 1.16194ms
-2026/05/08 22:46:57 ERROR listing inventories: Error 1054 (42S22): Unknown column 'inventories.deleted_at' in 'where clause'
-[INFO] 2026/05/08 22:46:57 GET /api/v1/inventory 500 853.221µs
-2026/05/08 22:46:59 ERROR listing inventories: Error 1054 (42S22): Unknown column 'inventories.deleted_at' in 'where clause'
-[INFO] 2026/05/08 22:46:59 GET /api/v1/inventory 500 669.14µs
+[INFO] 2026/05/06 23:11:59 POST /api/v1/auth/login 200 74.943838ms
+[INFO] 2026/05/06 23:11:59 GET /api/v1/inventory 500 654.198µs
