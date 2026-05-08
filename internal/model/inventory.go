@@ -7,6 +7,9 @@ type Inventory struct {
 	LocationID  int64   `bun:"location_id" json:"location_id"`
 	Quantity    float64 `bun:"quantity,notnull" json:"quantity"`
 	BatchNo     string  `bun:"batch_no" json:"batch_no"`
+
+	Warehouse   *Warehouse `bun:"rel:belongs-to,join:warehouse_id=id" json:"warehouse,omitempty"`
+	Product     *Product   `bun:"rel:belongs-to,join:product_id=id" json:"product,omitempty"`
 }
 
 type InventoryQueryFilter struct {

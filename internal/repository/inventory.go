@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"time"
 	"context"
+	"log"
+	"time"
 
 	"github.com/uptrace/bun"
 	"warehouse/internal/model"
@@ -40,14 +41,14 @@ func (r *InventoryRepository) List(ctx context.Context, filter *model.InventoryQ
 		Model(&inventories).
 		Relation("Product").
 		Relation("Warehouse").
-		Where("inventories.deleted_at IS NULL")
+		Where("inventory.deleted_at IS NULL")
 
 	if filter.ProductID > 0 {
-		q = q.Where("inventories.product_id = ?", filter.ProductID)
+		q = q.Where("inventory.product_id = ?", filter.ProductID)
 	}
 
 	if filter.WarehouseID > 0 {
-		q = q.Where("inventories.warehouse_id = ?", filter.WarehouseID)
+		q = q.Where("inventory.warehouse_id = ?", filter.WarehouseID)
 	}
 
 	if filter.ProductName != "" {
@@ -55,23 +56,24 @@ func (r *InventoryRepository) List(ctx context.Context, filter *model.InventoryQ
 	}
 
 	if filter.QuantityMin != nil {
-		q = q.Where("inventories.quantity >= ?", *filter.QuantityMin)
+		q = q.Where("inventory.quantity >= ?", *filter.QuantityMin)
 	}
 
 	if filter.QuantityMax != nil {
-		q = q.Where("inventories.quantity <= ?", *filter.QuantityMax)
+		q = q.Where("inventory.quantity <= ?", *filter.QuantityMax)
 	}
 
 	if filter.BatchNo != "" {
-		q = q.Where("inventories.batch_no LIKE ?", "%"+filter.BatchNo+"%")
+		q = q.Where("inventory.batch_no LIKE ?", "%"+filter.BatchNo+"%")
 	}
 
 	total, err := q.
-		Order("inventories.id DESC").
+		Order("inventory.id DESC").
 		Offset((filter.Page - 1) * filter.PageSize).
 		Limit(filter.PageSize).
 		ScanAndCount(ctx)
 	if err != nil {
+		log.Printf("ERROR listing inventories: %v", err)
 		return nil, 0, err
 	}
 	return inventories, total, nil
