@@ -4,6 +4,7 @@ import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs, { Dayjs } from 'dayjs'
 import { useDashboardStats } from './hooks/useDashboardStats'
+import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { 
   InventoryCard, 
   WarningCard, 
@@ -54,10 +55,7 @@ export function Dashboard() {
 
   return (
     <div style={{ padding: '24px' }}>
-      <Row justify="space-between" align="middle" style={{ marginBottom: '24px' }}>
-        <Col>
-          <h1 style={{ margin: 0 }}>仪表盘</h1>
-        </Col>
+      <Row justify="end" style={{ marginBottom: '24px' }}>
         <Col>
           <Space>
             <RangePicker
@@ -76,78 +74,88 @@ export function Dashboard() {
         </Col>
       </Row>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} sm={12} lg={6}>
-          <InventoryCard 
-            value={overview?.total_inventory || 0} 
-            warning={overview?.inventory_warning || 0}
-            onClick={() => navigate('/inventory')}
-          />
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <WarningCard 
-            value={overview?.inventory_warning || 0}
-            onClick={() => navigate('/inventory?quantity_max=10')}
-          />
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <TodayInboundCard 
-            orders={overview?.today_inbound || 0}
-            quantity={overview?.today_inbound_qty || 0}
-            onClick={() => navigate('/inbound')}
-          />
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <TodayOutboundCard 
-            orders={overview?.today_outbound || 0}
-            quantity={overview?.today_outbound_qty || 0}
-            onClick={() => navigate('/outbound')}
-          />
-        </Col>
-      </Row>
+        <ErrorBoundary>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} sm={12} lg={6}>
+              <InventoryCard 
+                value={overview?.total_inventory || 0} 
+                warning={overview?.inventory_warning || 0}
+                onClick={() => navigate('/inventory')}
+              />
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <WarningCard 
+                value={overview?.inventory_warning || 0}
+                onClick={() => navigate('/inventory?quantity_max=10')}
+              />
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <TodayInboundCard 
+                orders={overview?.today_inbound || 0}
+                quantity={overview?.today_inbound_qty || 0}
+                onClick={() => navigate('/inbound')}
+              />
+            </Col>
+            <Col xs={24} sm={12} lg={6}>
+              <TodayOutboundCard 
+                orders={overview?.today_outbound || 0}
+                quantity={overview?.today_outbound_qty || 0}
+                onClick={() => navigate('/outbound')}
+              />
+            </Col>
+          </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
-        <Col xs={24} lg={16}>
-          <TrendChart 
-            data={trend || []} 
-            loading={loading}
-            onPointClick={(date, type) => {
-              const path = type === 'inbound' ? '/inbound' : '/outbound'
-              navigate(`${path}?date=${date}`)
-            }}
-          />
-        </Col>
-        <Col xs={24} lg={8}>
-          <TopProductsChart 
-            data={topProducts || []} 
-            loading={loading}
-            onBarClick={(productId) => {
-              navigate(`/products?id=${productId}`)
-            }}
-          />
-        </Col>
-      </Row>
+        <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+          <Col xs={24} lg={16}>
+            <ErrorBoundary>
+              <TrendChart 
+                data={trend || []} 
+                loading={loading}
+                onPointClick={(date, type) => {
+                  const path = type === 'inbound' ? '/inbound' : '/outbound'
+                  navigate(`${path}?date=${date}`)
+                }}
+              />
+            </ErrorBoundary>
+          </Col>
+          <Col xs={24} lg={8}>
+            <ErrorBoundary>
+              <TopProductsChart 
+                data={topProducts || []} 
+                loading={loading}
+                onBarClick={(productId) => {
+                  navigate(`/products?id=${productId}`)
+                }}
+              />
+            </ErrorBoundary>
+          </Col>
+        </Row>
 
-      <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
-        <Col xs={24} lg={12}>
-          <WarehouseUsageChart 
-            data={warehouseUsage || []} 
-            loading={loading}
-            onClick={(warehouseId) => {
-              navigate(`/inventory?warehouse_id=${warehouseId}`)
-            }}
-          />
-        </Col>
-        <Col xs={24} lg={12}>
-          <SupplierPerformanceChart 
-            data={supplierPerformance || []} 
-            loading={loading}
-            onClick={(supplierId) => {
-              navigate(`/suppliers?id=${supplierId}`)
-            }}
-          />
-        </Col>
-      </Row>
+        <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
+          <Col xs={24} lg={12}>
+            <ErrorBoundary>
+              <WarehouseUsageChart 
+                data={warehouseUsage || []} 
+                loading={loading}
+                onClick={(warehouseId) => {
+                  navigate(`/inventory?warehouse_id=${warehouseId}`)
+                }}
+              />
+            </ErrorBoundary>
+          </Col>
+          <Col xs={24} lg={12}>
+            <ErrorBoundary>
+              <SupplierPerformanceChart 
+                data={supplierPerformance || []} 
+                loading={loading}
+                onClick={(supplierId) => {
+                  navigate(`/suppliers?id=${supplierId}`)
+                }}
+              />
+            </ErrorBoundary>
+          </Col>
+        </Row>
+      </ErrorBoundary>
     </div>
   )
 }

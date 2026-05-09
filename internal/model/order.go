@@ -30,7 +30,7 @@ func (o *InboundOrder) TableName() string {
 
 type InboundItem struct {
 	BaseModel
-	OrderID    int64   `bun:"order_id,notnull" json:"order_id"`
+	OrderID    int64   `bun:"inbound_order_id,notnull" json:"order_id"`
 	ProductID  int64   `bun:"product_id,notnull" json:"product_id"`
 	LocationID int64   `bun:"location_id" json:"location_id"`
 	Quantity   float64 `bun:"quantity,notnull" json:"quantity"`
@@ -70,7 +70,7 @@ func (o *OutboundOrder) TableName() string {
 
 type OutboundItem struct {
 	BaseModel
-	OrderID    int64   `bun:"order_id,notnull" json:"order_id"`
+	OrderID    int64   `bun:"outbound_order_id,notnull" json:"order_id"`
 	ProductID  int64   `bun:"product_id,notnull" json:"product_id"`
 	LocationID int64   `bun:"location_id" json:"location_id"`
 	Quantity   float64 `bun:"quantity,notnull" json:"quantity"`

@@ -42,6 +42,7 @@ func main() {
 	outboundItemRepo := repository.NewOutboundItemRepository(db)
 	stockTransferRepo := repository.NewStockTransferRepository(db)
 	auditLogRepo := repository.NewAuditLogRepository(db)
+	dashboardRepo := repository.NewDashboardRepository(db)
 
 	expireDuration, err := time.ParseDuration(cfg.JWT.Expire)
 	if err != nil {
@@ -64,6 +65,7 @@ func main() {
 	inboundOrderService := service.NewInboundOrderService(inboundOrderRepo, inboundItemRepo, inventoryService, auditLogService)
 	outboundOrderService := service.NewOutboundOrderService(outboundOrderRepo, outboundItemRepo, inventoryService, auditLogService)
 	stockTransferService := service.NewStockTransferService(stockTransferRepo, nil, inventoryService, auditLogService)
+	dashboardService := service.NewDashboardService(dashboardRepo)
 
 	authHandler := handler.NewAuthHandler(authService)
 	userHandler := handler.NewUserHandler(userService)
@@ -80,6 +82,7 @@ func main() {
 	outboundOrderHandler := handler.NewOutboundOrderHandler(outboundOrderService)
 	stockTransferHandler := handler.NewStockTransferHandler(stockTransferService)
 	auditLogHandler := handler.NewAuditLogHandler(auditLogService)
+	dashboardHandler := handler.NewDashboardHandler(dashboardService)
 
 	gin.SetMode(cfg.Server.Mode)
 	engine := gin.New()
@@ -100,10 +103,12 @@ func main() {
 		OutboundOrder: outboundOrderHandler,
 		StockTransfer: stockTransferHandler,
 		AuditLog:      auditLogHandler,
+		Dashboard:     dashboardHandler,
 	})
 
 	addr := fmt.Sprintf(":%d", cfg.Server.Port)
 	log.Printf("Server starting on %s", addr)
+	log.Printf("Server listening on all interfaces (0.0.0.0), accessible remotely")
 	if err := engine.Run(addr); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
