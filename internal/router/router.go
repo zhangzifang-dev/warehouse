@@ -28,6 +28,7 @@ type Handlers struct {
 	OutboundOrder *handler.OutboundOrderHandler
 	StockTransfer *handler.StockTransferHandler
 	AuditLog      *handler.AuditLogHandler
+	Dashboard     *handler.DashboardHandler
 }
 
 func Setup(r *gin.Engine, jwtService *jwt.JWT, handlers *Handlers) {
@@ -63,6 +64,16 @@ func Setup(r *gin.Engine, jwtService *jwt.JWT, handlers *Handlers) {
 			handler.RegisterOutboundOrderRoutes(protected, handlers.OutboundOrder)
 			handler.RegisterStockTransferRoutes(protected, handlers.StockTransfer)
 			handler.RegisterAuditLogRoutes(protected, handlers.AuditLog)
+
+			dashboard := protected.Group("/dashboard")
+			{
+				dashboard.GET("/overview", handlers.Dashboard.GetOverview)
+				dashboard.GET("/trend", handlers.Dashboard.GetTrendData)
+				dashboard.GET("/top-products", handlers.Dashboard.GetTopProducts)
+				dashboard.GET("/warehouse-usage", handlers.Dashboard.GetWarehouseUsage)
+				dashboard.GET("/supplier-performance", handlers.Dashboard.GetSupplierPerformance)
+				dashboard.GET("/pending-orders", handlers.Dashboard.GetPendingOrders)
+			}
 		}
 	}
 

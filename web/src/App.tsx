@@ -7,6 +7,7 @@ import { MainLayout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { Login } from './pages/auth/Login'
 import { ChangePassword } from './pages/auth/ChangePassword'
+import { Dashboard } from './pages/dashboard'
 import { WarehouseList, LocationList } from './pages/warehouse'
 import { CategoryList, ProductList } from './pages/product'
 import { InventoryList } from './pages/inventory'
@@ -16,10 +17,6 @@ import { UserList } from './pages/system/UserList'
 import { RoleList } from './pages/system/RoleList'
 import { PermissionList } from './pages/system/PermissionList'
 import { AuditLogList } from './pages/system/AuditLogList'
-
-function Dashboard() {
-  return <div>Dashboard</div>
-}
 
 function App() {
   const { theme: appTheme } = useAuthStore()
