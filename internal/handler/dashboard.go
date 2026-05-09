@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log"
 	"strconv"
 	"time"
 
@@ -34,6 +35,7 @@ func NewDashboardHandler(dashboardService DashboardService) *DashboardHandler {
 func (h *DashboardHandler) GetOverview(c *gin.Context) {
 	stats, err := h.dashboardService.GetOverview(c.Request.Context())
 	if err != nil {
+		log.Printf("[ERROR] GetOverview failed: %v", err)
 		if appErr, ok := err.(*apperrors.AppError); ok {
 			response.Error(c, appErr.Code, appErr.Message)
 			return

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"log"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -19,47 +20,63 @@ func NewDashboardRepository(db *bun.DB) *DashboardRepository {
 func (r *DashboardRepository) GetOverviewStats(ctx context.Context) (*model.OverviewStats, error) {
 	stats := &model.OverviewStats{}
 
+	var totalInv float64
 	err := r.db.NewSelect().
 		Table("inventories").
 		Where("deleted_at IS NULL").
-		ColumnExpr("COALESCE(SUM(quantity), 0) as total_inventory").
-		Scan(ctx, &stats.TotalInventory)
+		ColumnExpr("COALESCE(SUM(quantity), 0)").
+		Scan(ctx, &totalInv)
 	if err != nil {
+		log.Printf("[ERROR] GetOverviewStats - total_inventory query failed: %v", err)
 		return nil, err
 	}
+	stats.TotalInventory = totalInv
 
+	var warning int
 	err = r.db.NewSelect().
 		Table("inventories").
 		Where("deleted_at IS NULL").
 		Where("quantity < 10").
-		ColumnExpr("COUNT(*) as inventory_warning").
-		Scan(ctx, &stats.InventoryWarning)
+		ColumnExpr("COUNT(*)").
+		Scan(ctx, &warning)
 	if err != nil {
+		log.Printf("[ERROR] GetOverviewStats - inventory_warning query failed: %v", err)
 		return nil, err
 	}
+	stats.InventoryWarning = warning
 
 	today := time.Now().Format("2006-01-02")
+	var todayIn int
+	var todayInQty float64
 	err = r.db.NewSelect().
 		Table("inbound_orders").
 		Where("deleted_at IS NULL").
 		Where("DATE(created_at) = ?", today).
-		ColumnExpr("COUNT(*) as today_inbound").
-		ColumnExpr("COALESCE(SUM(total_qty), 0) as today_inbound_qty").
-		Scan(ctx, &stats.TodayInbound, &stats.TodayInboundQty)
+		ColumnExpr("COUNT(*)").
+		ColumnExpr("COALESCE(SUM(total_quantity), 0)").
+		Scan(ctx, &todayIn, &todayInQty)
 	if err != nil {
+		log.Printf("[ERROR] GetOverviewStats - today_inbound query failed: %v", err)
 		return nil, err
 	}
+	stats.TodayInbound = todayIn
+	stats.TodayInboundQty = todayInQty
 
+	var todayOut int
+	var todayOutQty float64
 	err = r.db.NewSelect().
 		Table("outbound_orders").
 		Where("deleted_at IS NULL").
 		Where("DATE(created_at) = ?", today).
-		ColumnExpr("COUNT(*) as today_outbound").
-		ColumnExpr("COALESCE(SUM(total_qty), 0) as today_outbound_qty").
-		Scan(ctx, &stats.TodayOutbound, &stats.TodayOutboundQty)
+		ColumnExpr("COUNT(*)").
+		ColumnExpr("COALESCE(SUM(total_quantity), 0)").
+		Scan(ctx, &todayOut, &todayOutQty)
 	if err != nil {
+		log.Printf("[ERROR] GetOverviewStats - today_outbound query failed: %v", err)
 		return nil, err
 	}
+	stats.TodayOutbound = todayOut
+	stats.TodayOutboundQty = todayOutQty
 
 	return stats, nil
 }
@@ -77,7 +94,7 @@ func (r *DashboardRepository) GetTrendData(ctx context.Context, params *model.Da
 		Where("created_at >= ?", params.StartDate).
 		Where("created_at <= ?", params.EndDate).
 		ColumnExpr("DATE(created_at) as date").
-		ColumnExpr("COALESCE(SUM(total_qty), 0) as qty").
+		ColumnExpr("COALESCE(SUM(total_quantity), 0) as qty").
 		GroupExpr("DATE(created_at)").
 		OrderExpr("date").
 		Scan(ctx, &inboundTrend)
@@ -92,7 +109,7 @@ func (r *DashboardRepository) GetTrendData(ctx context.Context, params *model.Da
 		Where("created_at >= ?", params.StartDate).
 		Where("created_at <= ?", params.EndDate).
 		ColumnExpr("DATE(created_at) as date").
-		ColumnExpr("COALESCE(SUM(total_qty), 0) as qty").
+		ColumnExpr("COALESCE(SUM(total_quantity), 0) as qty").
 		GroupExpr("DATE(created_at)").
 		OrderExpr("date").
 		Scan(ctx, &outboundTrend)
@@ -144,11 +161,11 @@ func (r *DashboardRepository) GetTopProducts(ctx context.Context, params *model.
 		TableExpr("outbound_items AS oi").
 		Join("JOIN products p ON oi.product_id = p.id").
 		Join("LEFT JOIN categories c ON p.category_id = c.id").
-		Join("JOIN outbound_orders o ON oi.order_id = o.id").
+		Join("JOIN outbound_orders o ON oi.outbound_order_id = o.id").
 		Where("o.deleted_at IS NULL").
 		Where("o.created_at >= ?", params.StartDate).
 		Where("o.created_at <= ?", params.EndDate).
-		Where("o.status = 'completed'").
+		Where("o.status >= 1").
 		ColumnExpr("p.id as product_id").
 		ColumnExpr("p.name as product_name").
 		ColumnExpr("COALESCE(c.name, '') as category").
@@ -183,13 +200,14 @@ func (r *DashboardRepository) GetWarehouseUsage(ctx context.Context) ([]model.Wa
 	`
 
 	err := r.db.NewRaw(query).Scan(ctx, &usage)
+	log.Printf("[ERROR] GetWarehouseUsage query failed: %v", err)
 	if err != nil {
 		return nil, err
 	}
 
 	for i := range usage {
 		if usage[i].Capacity > 0 {
-			usage[i].UsageRate = (usage[i].UsedCapacity / usage[i].Capacity) * 100
+			usage[i].UsageRate = float64(usage[i].UsedCapacity) / float64(usage[i].Capacity) * 100
 		}
 	}
 
@@ -208,10 +226,10 @@ func (r *DashboardRepository) GetSupplierPerformance(ctx context.Context, params
 			s.id as supplier_id,
 			s.name as supplier_name,
 			COUNT(DISTINCT io.id) as order_count,
-			COALESCE(SUM(io.total_amount), 0) as total_value,
-			0 as on_time_rate,
-			0 as quality_score,
-			0 as delivery_score
+			COALESCE(SUM(io.total_quantity), 0) as total_value,
+			0.0 as on_time_rate,
+			0.0 as quality_score,
+			0.0 as delivery_score
 		FROM suppliers s
 		LEFT JOIN inbound_orders io ON s.id = io.supplier_id 
 			AND io.deleted_at IS NULL
@@ -225,6 +243,7 @@ func (r *DashboardRepository) GetSupplierPerformance(ctx context.Context, params
 
 	err := r.db.NewRaw(query, params.StartDate, params.EndDate, params.Limit).Scan(ctx, &performance)
 	if err != nil {
+		log.Printf("[ERROR] GetSupplierPerformance query failed: %v", err)
 		return nil, err
 	}
 

@@ -1,5 +1,6 @@
 import { Pie } from '@ant-design/charts'
 import { Card, Spin } from 'antd'
+import { useAuthStore } from '../../../stores/authStore'
 import type { WarehouseUsage } from '../../../types/dashboard'
 
 interface WarehouseUsageChartProps {
@@ -9,6 +10,8 @@ interface WarehouseUsageChartProps {
 }
 
 export function WarehouseUsageChart({ data, loading, onClick }: WarehouseUsageChartProps) {
+  const { theme } = useAuthStore()
+  
   const config = {
     data: data.map(item => ({
       type: item.warehouse_name,
@@ -19,33 +22,32 @@ export function WarehouseUsageChart({ data, loading, onClick }: WarehouseUsageCh
     colorField: 'type',
     radius: 0.8,
     innerRadius: 0.6,
+    theme: theme === 'dark' ? 'classicDark' : 'classic',
     label: {
-      type: 'inner',
-      offset: '-50%',
-      content: '{value}%',
+      text: 'value',
+      position: 'inside',
       style: {
         textAlign: 'center',
         fontSize: 12,
       },
     },
-    statistic: {
-      title: {
-        content: '平均使用率',
-      },
-      content: {
-        formatter: () => {
-          if (data.length === 0) return '0%'
-          const avg = data.reduce((sum, item) => sum + item.usage_rate, 0) / data.length
-          return `${avg.toFixed(1)}%`
-        },
-      },
+    legend: {
+      position: 'bottom' as const,
+    },
+    tooltip: {
+      title: 'type',
+      items: [{ channel: 'value' }],
     },
     onReady: (plot: any) => {
-      if (onClick) {
+      if (onClick && plot) {
         plot.on('element:click', (evt: any) => {
-          const { data } = evt.data
-          if (data && data.warehouseId) {
-            onClick(data.warehouseId)
+          try {
+            const eventData = evt?.data?.data || evt?.data
+            if (eventData?.warehouseId) {
+              onClick(eventData.warehouseId)
+            }
+          } catch (error) {
+            console.error('Chart click error:', error)
           }
         })
       }

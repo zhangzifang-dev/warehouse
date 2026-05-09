@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"time"
 
 	apperrors "warehouse/internal/pkg/errors"
@@ -28,6 +29,7 @@ func NewDashboardService(repo DashboardRepository) *DashboardService {
 func (s *DashboardService) GetOverview(ctx context.Context) (*model.OverviewStats, error) {
 	stats, err := s.repo.GetOverviewStats(ctx)
 	if err != nil {
+		log.Printf("[ERROR] Service GetOverview: %v", err)
 		return nil, apperrors.NewAppError(apperrors.CodeInternalError, "failed to get overview stats")
 	}
 	return stats, nil

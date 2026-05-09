@@ -1,5 +1,6 @@
 import { Line } from '@ant-design/charts'
 import { Card, Spin } from 'antd'
+import { useAuthStore } from '../../../stores/authStore'
 import type { TrendData } from '../../../types/dashboard'
 
 interface TrendChartProps {
@@ -9,6 +10,8 @@ interface TrendChartProps {
 }
 
 export function TrendChart({ data, loading, onPointClick }: TrendChartProps) {
+  const { theme } = useAuthStore()
+  
   const config = {
     data: data.flatMap(item => [
       { date: item.date, value: item.inbound_qty, type: '入库' },
@@ -19,6 +22,7 @@ export function TrendChart({ data, loading, onPointClick }: TrendChartProps) {
     seriesField: 'type',
     color: ['#1890ff', '#fa8c16'],
     smooth: true,
+    theme: theme === 'dark' ? 'classicDark' : 'classic',
     animation: {
       appear: {
         animation: 'path-in',

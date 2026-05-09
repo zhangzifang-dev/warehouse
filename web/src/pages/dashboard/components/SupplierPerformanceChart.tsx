@@ -1,5 +1,6 @@
 import { Radar } from '@ant-design/charts'
 import { Card, Spin } from 'antd'
+import { useAuthStore } from '../../../stores/authStore'
 import type { SupplierPerformance } from '../../../types/dashboard'
 
 interface SupplierPerformanceChartProps {
@@ -9,6 +10,8 @@ interface SupplierPerformanceChartProps {
 }
 
 export function SupplierPerformanceChart({ data, loading, onClick }: SupplierPerformanceChartProps) {
+  const { theme } = useAuthStore()
+  
   const config = {
     data: data.flatMap(item => [
       { name: item.supplier_name, label: '订单量', value: item.order_count },
@@ -28,15 +31,20 @@ export function SupplierPerformanceChart({ data, loading, onClick }: SupplierPer
       },
     },
     radius: 0.8,
+    theme: theme === 'dark' ? 'classicDark' : 'classic',
     onReady: (plot: any) => {
-      if (onClick) {
+      if (onClick && plot) {
         plot.on('element:click', (evt: any) => {
-          const { data } = evt.data
-          if (data && data.name) {
-            const supplier = data.find((item: any) => item.name === data.name)
-            if (supplier) {
-              onClick(supplier.supplier_id)
+          try {
+            const eventData = evt?.data?.data || evt?.data
+            if (eventData?.name && data.length > 0) {
+              const supplier = data.find((item: any) => item.supplier_name === eventData.name)
+              if (supplier) {
+                onClick(supplier.supplier_id)
+              }
             }
+          } catch (error) {
+            console.error('Chart click error:', error)
           }
         })
       }

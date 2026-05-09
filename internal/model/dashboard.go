@@ -4,12 +4,12 @@ import "time"
 
 // OverviewStats 总览统计
 type OverviewStats struct {
-	TotalInventory   float64 `json:"total_inventory"`
-	InventoryWarning int     `json:"inventory_warning"`
-	TodayInbound     int     `json:"today_inbound"`
-	TodayInboundQty  float64 `json:"today_inbound_qty"`
-	TodayOutbound    int     `json:"today_outbound"`
-	TodayOutboundQty float64 `json:"today_outbound_qty"`
+	TotalInventory   float64 `bun:"total_inventory" json:"total_inventory"`
+	InventoryWarning int     `bun:"inventory_warning" json:"inventory_warning"`
+	TodayInbound     int     `bun:"today_inbound" json:"today_inbound"`
+	TodayInboundQty  float64 `bun:"today_inbound_qty" json:"today_inbound_qty"`
+	TodayOutbound    int     `bun:"today_outbound" json:"today_outbound"`
+	TodayOutboundQty float64 `bun:"today_outbound_qty" json:"today_outbound_qty"`
 }
 
 // TrendData 趋势数据
@@ -30,22 +30,22 @@ type TopProduct struct {
 
 // WarehouseUsage 仓库使用率
 type WarehouseUsage struct {
-	WarehouseID   int64   `json:"warehouse_id"`
-	WarehouseName string  `json:"warehouse_name"`
-	Capacity      float64 `json:"capacity"`
-	UsedCapacity  float64 `json:"used_capacity"`
-	UsageRate     float64 `json:"usage_rate"`
+	WarehouseID   int64   `bun:"warehouse_id" json:"warehouse_id"`
+	WarehouseName string  `bun:"warehouse_name" json:"warehouse_name"`
+	Capacity      int     `bun:"capacity" json:"capacity"`
+	UsedCapacity  int     `bun:"used_capacity" json:"used_capacity"`
+	UsageRate     float64 `bun:"usage_rate" json:"usage_rate"`
 }
 
 // SupplierPerformance 供应商绩效
 type SupplierPerformance struct {
-	SupplierID    int64   `json:"supplier_id"`
-	SupplierName  string  `json:"supplier_name"`
-	OrderCount    int     `json:"order_count"`
-	TotalValue    float64 `json:"total_value"`
-	OnTimeRate    float64 `json:"on_time_rate"`
-	QualityScore  float64 `json:"quality_score"`
-	DeliveryScore float64 `json:"delivery_score"`
+	SupplierID    int64   `bun:"supplier_id" json:"supplier_id"`
+	SupplierName  string  `bun:"supplier_name" json:"supplier_name"`
+	OrderCount    int     `bun:"order_count" json:"order_count"`
+	TotalValue    float64 `bun:"total_value" json:"total_value"`
+	OnTimeRate    float64 `bun:"on_time_rate" json:"on_time_rate"`
+	QualityScore  float64 `bun:"quality_score" json:"quality_score"`
+	DeliveryScore float64 `bun:"delivery_score" json:"delivery_score"`
 }
 
 // PendingOrders 待处理订单
